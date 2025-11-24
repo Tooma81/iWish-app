@@ -5,6 +5,7 @@ import { supabase } from '@/utils/supabase';
 import Auth from '@/components/Auth'; // Sisselogimise/Registreerimise vaade
 import { Session } from '@supabase/supabase-js'; // Session tüüp
 import { useNavigation } from 'expo-router';
+import { customTabBarStyle } from "@/constants/tab-bar";
 
 export default function App() {
   const [session, setSession] = useState<Session | null>(null);
@@ -28,14 +29,8 @@ export default function App() {
   useEffect(() => {
     navigation.setOptions({
       headerShown: !!session,   // show header only when logged in
-    });
-  }, [session]);
-
-  useEffect(() => {
-    navigation.setOptions({
-      headerShown: !!session,           // keep header logic
       tabBarStyle: session
-        ? {}                            // logged in → default tab bar
+        ? customTabBarStyle                            // logged in → default tab bar
         : { display: "none" },          // logged out → hide tab bar
     });
   }, [session]);
