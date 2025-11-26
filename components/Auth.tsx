@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
-import { StyleSheet, View, Text, TextInput, Button, Alert, Image } from 'react-native'
+import { StyleSheet, View, Text, TextInput, Alert, Image } from 'react-native'
 import { supabase } from '@/utils/supabase'
+import { ThemedButton } from '@/components/themed-button';
 
 export const unstable_settings = {
   headerShown: false,
@@ -114,7 +115,7 @@ export default function Auth() {
 
       {/* Sisselogimise nupp */}
       <View style={styles.buttonContainer}>
-        <Button 
+        <ThemedButton 
           title={loading ? "Laeb..." : "Logi sisse"} 
           disabled={loading || !email || !password} 
           onPress={() => signInWithEmail()} 
@@ -123,7 +124,8 @@ export default function Auth() {
 
       {/* Registreerimise nupp */}
       <View style={styles.buttonContainer}>
-        <Button 
+        <ThemedButton 
+          variant='secondary'
           title={loading ? "Laeb..." : "Registreeri"} 
           disabled={loading || !email || !password} 
           onPress={() => signUpWithEmail()} 
