@@ -49,7 +49,7 @@ export default function App() {
     <View style={styles.container}>
       {/* Kui seanss on olemas, kuva sisselogitud sisu */}
       {session && session.user ? (
-        <View style={styles.container}>
+        <View style={styles.homeNavContainer}>
           <ThemedButton 
             title="Actual" 
             onPress={signOut} 
@@ -86,6 +86,12 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  homeNavContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between', 
+    width: 20
   },
   welcomeText: {
     fontSize: 20, 
