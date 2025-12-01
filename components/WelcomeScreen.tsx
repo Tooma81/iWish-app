@@ -2,6 +2,7 @@ import React from 'react';
 import { StyleSheet, View, Text, Image, TouchableOpacity } from 'react-native';
 import type { AuthMode } from './Auth'; 
 import { LOGO_SOURCE } from './Auth'; // Impordin logo
+import { LinearGradient } from 'expo-linear-gradient';
 
 // Määran Propide tüübi
 interface WelcomeScreenProps {
@@ -10,15 +11,15 @@ interface WelcomeScreenProps {
 
 export default function WelcomeScreen({ setMode }: WelcomeScreenProps) {
   return (
-    <View style={styles.fullScreenContainer}>
+    <LinearGradient colors={['#0D3245', '#115476', '#000000']} locations={[0.3, 0.6, 0.9]} style={styles.fullScreenContainer} >
       {/* Ülemine osa: Logo ja teksti konteiner */}
       <View style={styles.topContainer}>
         <Image style={styles.logoImage} source={LOGO_SOURCE} />
-        <Text style={styles.welcomeTitle}>
-          All Your Wishes 
-          {/* Parandatud: RN-s tuleb kasutada {"\n"} reavahetuseks */}
+        <Text style={styles.welcomeTitle}> All Your{" "}
+        <Text style={styles.highlightText}>Wishes</Text>
           {"\n"}Will Be Fulfilled
         </Text>
+
       </View>
       
       {/* Alumine osa: Nupud */}
@@ -39,7 +40,7 @@ export default function WelcomeScreen({ setMode }: WelcomeScreenProps) {
           <Text style={styles.bigOrangeButtonText}>Sign In</Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </LinearGradient>
   );
 }
 
@@ -57,45 +58,58 @@ const styles = StyleSheet.create({
     justifyContent: 'center', 
     alignItems: 'center',    
     // flex: 1 siin aitab lükata welcomeButtonsContainer alla
-    flex: 1, 
-    paddingTop: 50,
+    //flex: 1, 
+    paddingTop: 0,
   },
   
   // --- LOGO ---
   logoImage: {
-    width: 100, 
-    height: 100, 
+    width: 200, 
+    height: 200, 
     resizeMode: 'contain', 
-    marginBottom: 20,
+    marginBottom: 10,
   },
 
   // --- WELCOME/SPLASH EKRAANI STIILID ---
   welcomeTitle: {
-    fontSize: 28,
-    fontWeight: 'bold',
+    fontSize: 32,
+    fontWeight: '600',
     color: '#ffffff',
+    fontFamily: 'Sora_600SemiBold',
     textAlign: 'center',
-    marginTop: 15,
+    marginTop: 85,
+    textTransform: 'capitalize',
+    lineHeight: 40, 
+  },
+  highlightText: {
+    color: '#F2E9C2',
+    fontFamily: 'Sora_600SemiBold',
   },
   welcomeButtonsContainer: {
     width: '100%',
-    paddingBottom: 50, 
+    paddingBottom: 170, 
+    alignItems: 'center',
   },
 
   // --- NUPUD ---
   bigOrangeButton: {
-    backgroundColor: '#f7931e', 
-    borderRadius: 10,
-    height: 50, 
-    justifyContent: 'center',
-    alignItems: 'center',
-    width: '100%',
-  },
+  width: 270,
+  height: 55,
+  paddingVertical: 16,
+  paddingHorizontal: 20,
+  justifyContent: 'center',
+  alignItems: 'center',
+  borderRadius: 20,
+  backgroundColor: '#F5A858',
+},
+
   bigOrangeButtonText: {
-    color: '#000000', 
-    fontSize: 18,
-    fontWeight: 'bold',
+  color: '#FFF',
+  fontSize: 16,
+  fontWeight: '600',
+  lineHeight: 24,
   },
+
   buttonSpacing: {
     marginBottom: 15,
   },

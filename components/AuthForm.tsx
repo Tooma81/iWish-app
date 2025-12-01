@@ -2,6 +2,7 @@ import React from 'react';
 import { StyleSheet, View, Text, TextInput, Image, TouchableOpacity } from 'react-native';
 import type { AuthMode } from './Auth'; 
 import { LOGO_SOURCE, GOOGLE_ICON, FACEBOOK_ICON } from './Auth'; // Impordin konstandid
+import { LinearGradient } from 'expo-linear-gradient';
 
 // Määran Propide tüübi
 interface AuthFormProps {
@@ -43,7 +44,10 @@ export default function AuthForm({
 
   return (
     // container kasutab flex: 1 ja space-around, et vältida kerimist
-    <View style={styles.container}>
+    <LinearGradient
+      colors={['#0D3245', '#115476', '#000000']}
+      locations={[0.3, 0.5, 0.9]}
+      style={[styles.container, { flex: 1 }]}>
         {/* Logo ja Päis */}
         <View style={styles.headerContainer}>
           <Image style={styles.logoImage} source={LOGO_SOURCE} />
@@ -58,28 +62,28 @@ export default function AuthForm({
               onChangeText={setName}
               value={name}
               placeholder="Zoe Litvin"
-              placeholderTextColor="#888"
+              placeholderTextColor="#9b9999ff"
               autoCapitalize={'words'}
             />
           </View>
         )}
 
         {/* Meil */}
-        <View style={styles.verticallySpaced}>
+        <View style={[styles.verticallySpaced, { marginBottom: isSignUpMode ? 10 : 3 }]}>
           <Text style={styles.label}>E-mail</Text>
           <TextInput
             style={styles.input}
             onChangeText={setEmail}
             value={email}
             placeholder="example@gmail.com"
-            placeholderTextColor="#888"
+            placeholderTextColor="#9b9999ff"
             autoCapitalize={'none'}
             keyboardType={'email-address'}
           />
         </View>
         
         {/* Parool */}
-        <View style={styles.verticallySpaced}>
+        <View style={[styles.verticallySpaced, { marginBottom: isSignUpMode ? 10 : 8 }]}>
           <Text style={styles.label}>Password</Text>
           <TextInput
             style={styles.input}
@@ -100,18 +104,18 @@ export default function AuthForm({
         )}
 
         {/* PEAMINE AUTENTIMISE NUPP */}
-        <TouchableOpacity 
-            style={[styles.bigOrangeButton, styles.buttonSpacing, isDisabled && styles.disabledButton]}
-            onPress={onSubmit}
-            disabled={isDisabled} 
-        >
-            <Text style={styles.bigOrangeButtonText}>
-                {loading ? "Laeb..." : mainButtonTitle}
-            </Text>
+        <TouchableOpacity
+          style={[styles.bigOrangeButton, styles.buttonSpacing, isDisabled && styles.disabledButton]}
+          onPress={onSubmit}
+          disabled={isDisabled}
+          activeOpacity={0.7} >
+          <Text style={styles.bigOrangeButtonText}>
+            {loading ? "Loading..." : mainButtonTitle}
+          </Text>
         </TouchableOpacity>
         
         {/* SOTSIAALMEEDIA NUPUD JA TEKST */}
-        <Text style={styles.orText}>Or sign {mainButtonTitle.toLowerCase()} with</Text>
+        <Text style={styles.orText}>Or {mainButtonTitle.toLowerCase()} with</Text>
         <View style={styles.socialButtonsContainer}>
             {/* Google */}
             <TouchableOpacity style={styles.socialButton}>
@@ -138,7 +142,7 @@ export default function AuthForm({
             </Text>
         </TouchableOpacity>
 
-      </View>
+      </LinearGradient>
   );
 }
 
@@ -147,10 +151,9 @@ const styles = StyleSheet.create({
   container: {
     paddingHorizontal: 20,
     paddingTop: 60,
-    paddingBottom: 20, // Lisatud padding bottom, et sisu ei jääks ekraani serva
-    flex: 1, 
+    flex: 1,
+    paddingBottom: 20, // Lisatud padding bottom, et sisu ei jääks ekraani serva 
     alignItems: 'stretch',
-    backgroundColor: '#0a1d35',
     justifyContent: 'space-around', // Ainus viis tagada, et kogu sisu mahub avavaatesse (mitte kerimisse)
   },
   
@@ -161,8 +164,8 @@ const styles = StyleSheet.create({
     marginBottom: 20, // Vähendatud
   },
   logoImage: {
-    width: 100,  
-    height: 100, 
+    width: 150,  
+    height: 150, 
     resizeMode: 'contain', 
     marginBottom: 10, // Vähendatud
   },
@@ -171,34 +174,38 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     marginBottom: 4,
-    color: '#cccccc',
+    color: '#F5A858',
+    marginLeft: 10
   },
   verticallySpaced: {
     marginBottom: 10, // Vähendatud 15-lt 10-le
   },
   input: {
+    width: 303,
     height: 50,
     backgroundColor: '#ffffff',
     borderWidth: 1, 
-    borderColor: '#ffffff',
+    borderColor: '#C67C4E',
     paddingHorizontal: 15,
-    borderRadius: 10,
+    borderRadius: 20,
     fontSize: 16,
     color: '#000000',
   },
 
   // --- NUPUD ---
   bigOrangeButton: {
-    backgroundColor: '#f7931e',
-    borderRadius: 10,
-    height: 50,
+    display: 'flex',
+    borderRadius: 20,
+    height: 40,
+    width: 180,
     justifyContent: 'center',
     alignItems: 'center',
-    width: '100%',
+    backgroundColor: '#f5a858ff',
+    alignSelf: 'center'
   },
   bigOrangeButtonText: {
-    color: '#000000',
-    fontSize: 18,
+    color: '#ffffffff',
+    fontSize: 16,
     fontWeight: 'bold',
   },
   disabledButton: {

@@ -10,9 +10,9 @@ export type AuthMode = 'welcome' | 'signIn' | 'signUp';
 
 // Global pildi allikad (et vältida lokaalset 'require' viga)
 // HOIATUS: Lokaalseid pilte require('../assets/logo.png') ei saa siin keskkonnas kuvada.
-export const LOGO_SOURCE = require('../assets/logo.png');
+export const LOGO_SOURCE = require('../assets/splash-logo.png');
 export const GOOGLE_ICON = { uri: 'https://img.icons8.com/color/48/000000/google-logo.png' };
-export const FACEBOOK_ICON = { uri: 'https://img.icons8.com/color/48/000000/facebook-new.png' };
+export const FACEBOOK_ICON = { uri: 'https://img.icons8.com/?size=100&id=106163&format=png&color=228BE6' };
 
 
 // Simuleeritud Supabase'i sisselogimise ja registreerimise funktsioonid
@@ -98,7 +98,8 @@ export default function Auth() {
     case 'signIn':
     case 'signUp':
       return (
-        <AuthForm
+        <View style={{ flex: 1 }}>
+          <AuthForm
           mode={mode}
           setMode={setMode}
           email={email}
@@ -110,8 +111,8 @@ export default function Auth() {
           loading={loading}
           errorMessage={errorMessage}
           signInWithEmail={signInWithEmail}
-          signUpWithEmail={signUpWithEmail}
-        />
+          signUpWithEmail={signUpWithEmail} />
+        </View>
       );
     default:
       return <WelcomeScreen setMode={setMode} />;
