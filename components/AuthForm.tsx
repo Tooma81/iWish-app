@@ -47,7 +47,7 @@ export default function AuthForm({
     <LinearGradient
       colors={['#0D3245', '#115476', '#000000']}
       locations={[0.3, 0.5, 0.9]}
-      style={[styles.container, { flex: 1 }]}>
+      style={[styles.container, { flex: 1, }]}>
         {/* Logo ja Päis */}
         <View style={styles.headerContainer}>
           <Image style={styles.logoImage} source={LOGO_SOURCE} />
@@ -178,10 +178,11 @@ const styles = StyleSheet.create({
     marginLeft: 10
   },
   verticallySpaced: {
-    marginBottom: 10, // Vähendatud 15-lt 10-le
+    marginBottom: 10,
+    alignSelf: 'center',
   },
   input: {
-    width: 303,
+    width: 320,
     height: 50,
     backgroundColor: '#ffffff',
     borderWidth: 1, 

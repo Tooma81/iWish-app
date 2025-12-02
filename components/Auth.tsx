@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Alert, StyleSheet, View } from 'react-native';
+import { Alert, StyleSheet, View, Dimensions } from 'react-native';
 import { supabase } from '../utils/supabase';
 
 // Impordin abikomponendid
@@ -15,6 +15,8 @@ export const LOGO_SOURCE = require('../assets/splash-logo.png');
 export const GOOGLE_ICON = { uri: 'https://img.icons8.com/color/48/000000/google-logo.png' };
 export const FACEBOOK_ICON = { uri: 'https://img.icons8.com/?size=100&id=106163&format=png&color=228BE6' };
 
+const screenHeight = Dimensions.get('window').height;
+const screenWidth = Dimensions.get('window').width;
 
 export default function Auth() {
   const [email, setEmail] = useState('')
@@ -91,11 +93,15 @@ export default function Auth() {
   // Peamine renderdamine: valib vaate
   switch (mode) {
     case 'welcome':
-      return <WelcomeScreen setMode={setMode} />;
+      return (
+        <View style={styles.authContainer}>
+          <WelcomeScreen setMode={setMode} />
+        </View>
+      );
     case 'signIn':
     case 'signUp':
       return (
-        <View style={{ flex: 1 }}>
+        <View style={styles.authContainer}>
           <AuthForm
           mode={mode}
           setMode={setMode}
@@ -117,5 +123,11 @@ export default function Auth() {
 }
 
 const styles = StyleSheet.create({
+  authContainer: {
+    flex: 1, 
+    minHeight: screenHeight, 
+    minWidth: screenWidth,
+    alignSelf: 'center',
+  }
     // Vaikimisi stiile pole vaja, kuna alamkomponendid haldavad tausta ja paigutust.
 });
