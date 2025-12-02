@@ -24,10 +24,11 @@
       "predictiveBackGestureEnabled": false
     },
     "web": {
-      "favicon": "./assets/splash.png"
+      "favicon": "./assets/favicon.png"
     },
     "plugins": [
+      "expo-font",
       "expo-router"
-    ]
+    },
   }
 }
