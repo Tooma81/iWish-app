@@ -29,6 +29,6 @@
     "plugins": [
       "expo-font",
       "expo-router"
-    },
+    ]
   }
 }
