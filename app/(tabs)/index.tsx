@@ -8,6 +8,7 @@ import { useNavigation } from 'expo-router';
 import { customTabBarStyle } from "@/constants/tab-bar";
 import { ThemedButton } from '@/components/themed-button';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import Wishlist from '@/components/Wishlist';
 
 const screenHeight = Dimensions.get('window').height;
 const screenWidth = Dimensions.get('window').width;
@@ -77,13 +78,7 @@ export default function App() {
               style={styles.homeNavButton}
             />
           </View>
-          <View style={styles.wishlistContainer}>
-            {cameTrue ? (
-              <Text>"Came true" list is here!</Text>
-            ) : (
-              <Text>"Actual" list is here!</Text>
-            )}
-          </View>
+          <Wishlist cameTrue={cameTrue}/>
         </>
       ) : (
         // Kui seanssi pole, kuva autentimise vorm
@@ -114,12 +109,6 @@ const styles = StyleSheet.create({
     margin: 10,
     minWidth: screenWidth,
     alignSelf: 'center',
-  },
-  wishlistContainer: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   homeNavButton: {
     width: screenWidth * 0.3,
