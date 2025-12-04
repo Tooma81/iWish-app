@@ -12,8 +12,6 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 const screenHeight = Dimensions.get('window').height;
 const screenWidth = Dimensions.get('window').width;
 
-const [cameTrue, setCameTrue] = useState(false);
-
 export default function App() {
   const [session, setSession] = useState<Session | null>(null);
   const navigation = useNavigation(); 
