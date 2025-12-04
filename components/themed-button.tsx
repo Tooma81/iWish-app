@@ -65,7 +65,10 @@ export function ThemedButton({
         style]}
     >
       {typeof title === 'string' ? (
-        <Text style={[styles.titleBase, { color: textColor }, titleStyle]}>
+        <Text 
+          numberOfLines={1}      
+          ellipsizeMode="tail" 
+          style={[styles.titleBase, { color: textColor }, titleStyle]}>
           {title}
         </Text>
       ) : (
@@ -80,7 +83,6 @@ export function ThemedButton({
 const styles = StyleSheet.create({
   buttonBase: {
     height: 40,
-    padding: 12,
     borderWidth: 1,
     borderRadius: 17,
     alignItems: 'center',
@@ -92,6 +94,7 @@ const styles = StyleSheet.create({
     fontWeight: 700,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'visible',
   },
   disabled: {
     opacity: 0.4,

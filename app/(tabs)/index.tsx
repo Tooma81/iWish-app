@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, Text, Alert } from 'react-native'; // Lisasime Button ja Alert
+import { View, StyleSheet, Text, Alert, Dimensions } from 'react-native'; // Lisasime Button ja Alert
 // See import viitab Sinu puhastatud failile utils/supabase
 import { supabase } from '@/utils/supabase'; 
 import Auth from '@/components/Auth'; // Sisselogimise/Registreerimise vaade
@@ -9,9 +9,17 @@ import { customTabBarStyle } from "@/constants/tab-bar";
 import { ThemedButton } from '@/components/themed-button';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
+const screenHeight = Dimensions.get('window').height;
+const screenWidth = Dimensions.get('window').width;
+
+const [cameTrue, setCameTrue] = useState(false);
+
 export default function App() {
   const [session, setSession] = useState<Session | null>(null);
   const navigation = useNavigation(); 
+  
+  // Kodu navigatsioon 
+  const [cameTrue, setCameTrue] = useState(false);
 
   useEffect(() => {
     // 1. Kontrolli seansi olekut käivitamisel
@@ -49,23 +57,36 @@ export default function App() {
     <View style={styles.container}>
       {/* Kui seanss on olemas, kuva sisselogitud sisu */}
       {session && session.user ? (
-        <View style={styles.homeNavContainer}>
-          <ThemedButton 
-            title="Actual" 
-            onPress={signOut} 
-          />
-          <ThemedButton 
-            variant="secondary"
-            tone="border"
-            title="Came true" 
-            onPress={signOut} 
-          />
-          <ThemedButton 
-            tone="border"
-            title={'\uff0b Add iWish'}
-            onPress={signOut} 
-          />
-        </View>
+        <>
+          <View style={styles.homeNavContainer}>
+            <ThemedButton 
+              title="Actual" 
+              tone={cameTrue ? "border" : "solid"}
+              onPress={() => setCameTrue(false)} 
+              style={styles.homeNavButton}
+            />
+            <ThemedButton 
+              variant="secondary"
+              tone={cameTrue ? "solid" : "border"}
+              title="Came true" 
+              onPress={() => setCameTrue(true)} 
+              style={styles.homeNavButton}
+            />
+            <ThemedButton 
+              tone="border"
+              title={'\uff0b Add iWish'}
+              onPress={signOut} 
+              style={styles.homeNavButton}
+            />
+          </View>
+          <View style={styles.wishlistContainer}>
+            {cameTrue ? (
+              <Text>"Came true" list is here!</Text>
+            ) : (
+              <Text>"Actual" list is here!</Text>
+            )}
+          </View>
+        </>
       ) : (
         // Kui seanssi pole, kuva autentimise vorm
         <Auth />
@@ -90,8 +111,21 @@ const styles = StyleSheet.create({
   homeNavContainer: {
     flex: 1,
     flexDirection: 'row',
-    justifyContent: 'space-between', 
-    width: 20
+    justifyContent: 'space-evenly', 
+    width: 20,
+    margin: 10,
+    minWidth: screenWidth,
+    alignSelf: 'center',
+  },
+  wishlistContainer: {
+    flex: 1,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  homeNavButton: {
+    width: screenWidth * 0.3,
+    marginHorizontal: screenWidth * 0.01,
   },
   welcomeText: {
     fontSize: 20, 
