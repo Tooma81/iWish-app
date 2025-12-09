@@ -1,6 +1,7 @@
 import React from 'react';
-import { StyleSheet, View, Text, TextInput} from 'react-native';
+import { StyleSheet, View, Text, TextInput, Alert, TouchableOpacity} from 'react-native';
 import { ThemedButton } from '@/components/themed-button';
+import Feather from '@expo/vector-icons/Feather';
 
 // Määran Propide tüübi
 interface AddWishFormProps {
@@ -27,8 +28,11 @@ export default function AddWishForm({
   addWish,
 }: AddWishFormProps) {
     
-    // Nupu keelamine
-    const isDisabled = loading || !title
+  // Nupu keelamine
+  const isDisabled = loading || !title
+
+  const handleOpenCamera = () => Alert.alert("Open camera")
+  const handleUpload = () => Alert.alert("Upload file form device")
 
   return (
     <View>
@@ -72,6 +76,21 @@ export default function AddWishForm({
             placeholderTextColor="#c5c5c5"
             autoComplete={'off'}
           />
+        </View>
+
+        {/* Pilt */}
+        <View style={styles.verticallySpaced}>
+          <View style={styles.addImage}>
+            <Text style={styles.label}>Add a picture:</Text>
+            <View style={styles.addImageBtn}>
+              <TouchableOpacity onPress={handleOpenCamera}>
+                <Feather name="camera" size={30} color="black" />
+              </TouchableOpacity>
+              <TouchableOpacity onPress={handleUpload}>
+                <Feather name="image" size={30} color="black" />
+              </TouchableOpacity>
+            </View>
+          </View>
         </View>
 
         {/* VEATEADE */}
@@ -138,6 +157,19 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#000000',
   },
+  addImage: {
+    width: 250,
+    flexDirection: 'row',
+    marginVertical: 10,
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  addImageBtn: {
+    flexDirection: 'row',
+    marginHorizontal: 10,
+    gap: 10,
+  },
+
 
   // --- SOTSIAALMEEDIA JA LÜLITI ---
   orText: {
