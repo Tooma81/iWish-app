@@ -96,6 +96,15 @@ export default function AuthForm({
           />
         </View>
 
+        {/* UUS: Forgot Password nupp (Ainult sisselogimisel) */}
+        {!isSignUpMode && (
+          <View style={styles.forgotPasswordContainer}>
+            <TouchableOpacity onPress={() => setMode('forgotPassword' as any)}>
+               <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
         {/* VEATEADE */}
         {errorMessage && (
           <View style={styles.errorBox}>
@@ -152,22 +161,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 60,
     flex: 1,
-    paddingBottom: 20, // Lisatud padding bottom, et sisu ei jääks ekraani serva 
+    paddingBottom: 20, 
     alignItems: 'stretch',
-    justifyContent: 'space-around', // Ainus viis tagada, et kogu sisu mahub avavaatesse (mitte kerimisse)
+    justifyContent: 'space-around', 
   },
   
   // --- LOGO JA PÄIS ---
   headerContainer: {
     justifyContent: 'center', 
     alignItems: 'center',    
-    marginBottom: 20, // Vähendatud
+    marginBottom: 20, 
   },
   logoImage: {
     width: 150,  
     height: 150, 
     resizeMode: 'contain', 
-    marginBottom: 10, // Vähendatud
+    marginBottom: 10, 
   },
 
   // --- SISENDVÄLJAD JA SILT ---
@@ -191,6 +200,20 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     fontSize: 16,
     color: '#000000',
+  },
+
+  // --- UUS: FORGOT PASSWORD STIIL ---
+  forgotPasswordContainer: {
+    width: 320, // Sama laius mis inputil
+    alignSelf: 'center', // Keskele joondatud konteiner
+    alignItems: 'flex-end', // Tekst paremale
+    marginTop: -5,
+    marginBottom: 15,
+  },
+  forgotPasswordText: {
+    color: '#F5A858', // Sama oranž mis labelitel
+    fontSize: 14,
+    fontWeight: 'bold',
   },
 
   // --- NUPUD ---
@@ -223,13 +246,13 @@ const styles = StyleSheet.create({
   orText: {
     textAlign: 'center',
     color: '#cccccc',
-    marginVertical: 15, // Vähendatud 20-lt 15-le
+    marginVertical: 15, 
     fontSize: 16,
   },
   socialButtonsContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginBottom: 15, // Vähendatud 30-lt 15-le
+    marginBottom: 15, 
   },
   socialButton: {
     backgroundColor: '#ffffff',
@@ -243,7 +266,7 @@ const styles = StyleSheet.create({
   },
   switchButton: {
     alignItems: 'center',
-    marginTop: 10, // Vähendatud 20-lt 10-le
+    marginTop: 10, 
   },
   switchText: {
     color: '#ffffff',
@@ -258,7 +281,7 @@ const styles = StyleSheet.create({
     borderColor: '#ef4444', 
     borderWidth: 1,
     borderRadius: 5,
-    marginBottom: 10, // Vähendatud
+    marginBottom: 10, 
   },
   errorText: {
     color: '#b91c1c', 
