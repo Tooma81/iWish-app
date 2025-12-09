@@ -6,87 +6,105 @@ import {
   TouchableOpacity, 
   StyleSheet, 
   Alert, 
-  ActivityIndicator 
+  ActivityIndicator,
+  Image
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient'; // Import gradienti jaoks
+import { LinearGradient } from 'expo-linear-gradient';
 import { supabase } from '../utils/supabase';
-
-interface PasswordResetProps {
-  onBack: () => void;
-}
+import { LOGO_SOURCE } from './Auth'; 
 
 type ResetStep = 'request' | 'verify' | 'update';
 
-export default function PasswordReset({ onBack }: PasswordResetProps) {
-  const [step, setStep] = useState<ResetStep>('request');
+interface PasswordResetProps {
+  onBack: () => void;
+  initialStep?: ResetStep; 
+}
+
+export default function PasswordReset({ onBack, initialStep = 'request' }: PasswordResetProps) {
+  const [step, setStep] = useState<ResetStep>(initialStep);
   const [email, setEmail] = useState('');
   const [token, setToken] = useState('');
   const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // 1. SAMM: Saada taastamise kood
+  // --- 1. SAMM: Küsi koodi ---
   const sendResetCode = async () => {
     if (!email) {
       Alert.alert('Viga', 'Palun sisesta e-posti aadress.');
       return;
     }
     setLoading(true);
-    
     const { error } = await supabase.auth.resetPasswordForEmail(email);
-
     setLoading(false);
 
     if (error) {
       Alert.alert('Viga', error.message);
     } else {
-      Alert.alert('Kood saadetud', 'Kontrolli oma e-posti ja kopeeri sealt kood.');
+      Alert.alert('Kood saadetud', 'Kontrolli postkasti!');
       setStep('verify');
     }
   };
 
-  // 2. SAMM: Kontrolli koodi
+  // --- 2. SAMM: Kontrolli koodi (8 numbrit) ---
   const verifyResetCode = async () => {
-    if (!token || token.length < 6) {
-      Alert.alert('Viga', 'Palun sisesta korrektne kood.');
+    const cleanToken = token.trim();
+    const cleanEmail = email.trim();
+
+    if (cleanToken.length !== 8) {
+      Alert.alert('Viga', `Kood peab olema 8 numbrit.`);
       return;
     }
+    
     setLoading(true);
-
+    
+    // verifyOtp logib kasutaja sisse. 
+    // App.tsx püüab selle kinni ja renderdab selle komponendi uuesti 'update' sammus.
     const { error } = await supabase.auth.verifyOtp({
-      email,
-      token,
+      email: cleanEmail,
+      token: cleanToken,
       type: 'recovery',
     });
-
+    
     setLoading(false);
 
     if (error) {
-      Alert.alert('Viga', 'Vale kood või kood on aegunud.');
+      Alert.alert('Viga', error.message || 'Vale kood.');
     } else {
+      // Kui App.tsx ei jõua reageerida piisavalt kiiresti, aitame kaasa
       setStep('update');
     }
   };
 
-  // 3. SAMM: Uuenda parool
+  // --- 3. SAMM: Uuenda parool ---
   const updateUserPassword = async () => {
     if (!newPassword || newPassword.length < 6) {
       Alert.alert('Viga', 'Parool peab olema vähemalt 6 tähemärki pikk.');
       return;
     }
+    if (newPassword !== confirmPassword) {
+      Alert.alert('Viga', 'Paroolid ei kattu.');
+      return;
+    }
+
     setLoading(true);
-
-    const { error } = await supabase.auth.updateUser({
-      password: newPassword
-    });
-
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
     setLoading(false);
 
     if (error) {
       Alert.alert('Viga', error.message);
     } else {
-      Alert.alert('Edukas', 'Sinu parool on muudetud. Palun logi uuesti sisse.', [
-        { text: 'OK', onPress: () => onBack() }
-      ]);
+      Alert.alert(
+        'Edukas', 
+        'Sinu parool on muudetud! Suuname sind sisselogimisse.', 
+        [{ 
+          text: 'OK', 
+          onPress: () => {
+            // See funktsioon käivitab App.tsx sees signOut()
+            onBack(); 
+          }
+        }]
+      );
     }
   };
 
@@ -94,19 +112,21 @@ export default function PasswordReset({ onBack }: PasswordResetProps) {
     <LinearGradient
       colors={['#0D3245', '#115476', '#000000']}
       locations={[0.3, 0.5, 0.9]}
-      style={styles.container}
+      style={styles.gradientContainer}
     >
       <View style={styles.contentContainer}>
         
-        <Text style={styles.header}>Taasta parool</Text>
+        <View style={styles.headerContainer}>
+          <Image style={styles.logoImage} source={LOGO_SOURCE} />
+          <Text style={styles.headerTitle}>
+            {step === 'update' ? 'Set New Password' : 'Reset Password'}
+          </Text>
+        </View>
 
-        {/* --- 1. SAMM: E-posti sisestamine --- */}
+        {/* --- 1. EMAIL --- */}
         {step === 'request' && (
           <View>
-            <Text style={styles.description}>
-              Sisesta oma e-posti aadress, et saada kinnituskood.
-            </Text>
-            
+             <Text style={styles.description}>Enter your email to receive a recovery code.</Text>
             <View style={styles.verticallySpaced}>
               <Text style={styles.label}>E-mail</Text>
               <TextInput
@@ -119,70 +139,49 @@ export default function PasswordReset({ onBack }: PasswordResetProps) {
                 keyboardType="email-address"
               />
             </View>
-
-            <TouchableOpacity 
-              style={[styles.bigOrangeButton, loading && styles.disabledButton]} 
-              onPress={sendResetCode} 
+            <TouchableOpacity
+              style={[styles.bigOrangeButton, loading && styles.disabledButton]}
+              onPress={sendResetCode}
               disabled={loading}
-              activeOpacity={0.7}
             >
-              {loading ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text style={styles.bigOrangeButtonText}>Saada kood</Text>
-              )}
+              {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.bigOrangeButtonText}>Send Code</Text>}
             </TouchableOpacity>
           </View>
         )}
 
-        {/* --- 2. SAMM: Koodi sisestamine --- */}
+        {/* --- 2. KOOD (8-kohaline) --- */}
         {step === 'verify' && (
           <View>
-            <Text style={styles.description}>
-              Sisesta 6-kohaline kood, mis saadeti aadressile {email}.
-            </Text>
-
+            <Text style={styles.description}>We sent an 8-digit code to {email}</Text>
             <View style={styles.verticallySpaced}>
-              <Text style={styles.label}>Kood</Text>
+              <Text style={styles.label}>Code</Text>
               <TextInput
                 style={styles.input}
-                placeholder="123456"
+                placeholder="12345678"
                 placeholderTextColor="#9b9999ff"
                 value={token}
                 onChangeText={setToken}
                 keyboardType="number-pad"
-                maxLength={6}
+                maxLength={8}
               />
             </View>
-
-            <TouchableOpacity 
-              style={[styles.bigOrangeButton, loading && styles.disabledButton]} 
-              onPress={verifyResetCode} 
+            <TouchableOpacity
+              style={[styles.bigOrangeButton, loading && styles.disabledButton]}
+              onPress={verifyResetCode}
               disabled={loading}
-              activeOpacity={0.7}
             >
-              {loading ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text style={styles.bigOrangeButtonText}>Kinnita kood</Text>
-              )}
-            </TouchableOpacity>
-
-            <TouchableOpacity onPress={() => setStep('request')} style={styles.linkButton}>
-              <Text style={styles.linkText}>Saada kood uuesti</Text>
+              {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.bigOrangeButtonText}>Verify Code</Text>}
             </TouchableOpacity>
           </View>
         )}
 
-        {/* --- 3. SAMM: Uue parooli määramine --- */}
+        {/* --- 3. UUS PAROOL --- */}
         {step === 'update' && (
           <View>
-            <Text style={styles.description}>
-              Sisesta uus turvaline parool.
-            </Text>
-
+            <Text style={styles.description}>Create a new strong password.</Text>
+            
             <View style={styles.verticallySpaced}>
-              <Text style={styles.label}>Uus parool</Text>
+              <Text style={styles.label}>New Password</Text>
               <TextInput
                 style={styles.input}
                 placeholder="********"
@@ -192,26 +191,33 @@ export default function PasswordReset({ onBack }: PasswordResetProps) {
                 secureTextEntry
               />
             </View>
+            
+            <View style={styles.verticallySpaced}>
+              <Text style={styles.label}>Confirm Password</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="********"
+                placeholderTextColor="#9b9999ff"
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+                secureTextEntry
+              />
+            </View>
 
-            <TouchableOpacity 
-              style={[styles.bigOrangeButton, loading && styles.disabledButton]} 
-              onPress={updateUserPassword} 
+            <TouchableOpacity
+              style={[styles.bigOrangeButton, loading && styles.disabledButton]}
+              onPress={updateUserPassword}
               disabled={loading}
-              activeOpacity={0.7}
             >
-              {loading ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text style={styles.bigOrangeButtonText}>Salvesta parool</Text>
-              )}
+              {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.bigOrangeButtonText}>Update Password</Text>}
             </TouchableOpacity>
           </View>
         )}
 
-        {/* Tagasi nupp */}
+        {/* Tagasi nupp (Peidetud 'update' ajal) */}
         {step !== 'update' && (
           <TouchableOpacity style={styles.backButton} onPress={onBack}>
-            <Text style={styles.backButtonText}>Tagasi sisselogimisse</Text>
+            <Text style={styles.backButtonText}>Back to Sign In</Text>
           </TouchableOpacity>
         )}
 
@@ -221,93 +227,18 @@ export default function PasswordReset({ onBack }: PasswordResetProps) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingHorizontal: 20,
-    justifyContent: 'center',
-  },
-  contentContainer: {
-    width: '100%',
-    alignSelf: 'center',
-  },
-  header: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    marginBottom: 20,
-    textAlign: 'center',
-    color: '#ffffff', // Valge tekst tumedal taustal
-    fontFamily: 'Sora', // Kui kasutasid fonti
-  },
-  description: {
-    fontSize: 16,
-    color: '#cccccc',
-    marginBottom: 30,
-    textAlign: 'center',
-  },
-  
-  // --- Inputi stiilid (kopeeritud AuthFormist) ---
-  verticallySpaced: {
-    marginBottom: 20,
-    alignSelf: 'center',
-  },
-  label: {
-    fontSize: 14,
-    marginBottom: 4,
-    color: '#F5A858', // Oranž silt
-    marginLeft: 10
-  },
-  input: {
-    width: 320,
-    height: 50,
-    backgroundColor: '#ffffff',
-    borderWidth: 1, 
-    borderColor: '#C67C4E',
-    paddingHorizontal: 15,
-    borderRadius: 20,
-    fontSize: 16,
-    color: '#000000',
-  },
-
-  // --- Nupu stiilid (kopeeritud AuthFormist) ---
-  bigOrangeButton: {
-    display: 'flex',
-    borderRadius: 20,
-    height: 40,
-    width: 180,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#f5a858ff',
-    alignSelf: 'center',
-    marginTop: 10,
-    marginBottom: 20,
-  },
-  bigOrangeButtonText: {
-    color: '#ffffffff',
-    fontSize: 16,
-    fontWeight: 'bold',
-    fontFamily: 'Sora',
-  },
-  disabledButton: {
-    backgroundColor: '#cc771a',
-    opacity: 0.7,
-  },
-
-  // --- Linkide stiilid ---
-  linkButton: {
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  linkText: {
-    color: '#ffffff',
-    textDecorationLine: 'underline',
-    fontSize: 14,
-  },
-  backButton: {
-    marginTop: 10,
-    alignItems: 'center',
-  },
-  backButtonText: {
-    color: '#cccccc',
-    fontSize: 14,
-  }
+  gradientContainer: { flex: 1, width: '100%', height: '100%' },
+  contentContainer: { flex: 1, paddingHorizontal: 20, justifyContent: 'center', alignItems: 'stretch' },
+  headerContainer: { alignItems: 'center', marginBottom: 30 },
+  logoImage: { width: 100, height: 100, resizeMode: 'contain', marginBottom: 15 },
+  headerTitle: { fontSize: 24, color: '#ffffff', fontWeight: 'bold', fontFamily: 'Sora' },
+  description: { fontSize: 14, color: '#cccccc', textAlign: 'center', marginBottom: 20 },
+  verticallySpaced: { marginBottom: 15, alignSelf: 'center' },
+  label: { fontSize: 14, marginBottom: 4, color: '#F5A858', marginLeft: 10 },
+  input: { width: 320, height: 50, backgroundColor: '#ffffff', borderWidth: 1, borderColor: '#C67C4E', paddingHorizontal: 15, borderRadius: 20, fontSize: 16, color: '#000000' },
+  bigOrangeButton: { display: 'flex', borderRadius: 20, height: 45, width: 200, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f5a858ff', alignSelf: 'center', marginTop: 10, marginBottom: 20, shadowColor: "#F5A858", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 5 },
+  bigOrangeButtonText: { color: '#ffffffff', fontSize: 16, fontWeight: 'bold', fontFamily: 'Sora' },
+  disabledButton: { backgroundColor: '#cc771a', opacity: 0.7 },
+  backButton: { alignItems: 'center', marginTop: 10 },
+  backButtonText: { color: '#ffffff', textDecorationLine: 'underline', fontSize: 14 }
 });

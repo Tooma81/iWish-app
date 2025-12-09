@@ -3,69 +3,88 @@ import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, Text, Button, Alert, ActivityIndicator } from 'react-native'; 
 import { supabase } from '../utils/supabase'; 
 import Auth from '../components/Auth'; 
-import { Session } from '@supabase/supabase-js'; 
+import { Session } from '@supabase/supabase-js';
+import PasswordReset from '@/components/PasswordReset';
+ 
 
 export default function App() {
   const [session, setSession] = useState<Session | null>(null);
-  // 2. UUS: Olek, et teada, kas Supabase on algse kontrolli lõpetanud
   const [initialized, setInitialized] = useState(false);
+  
+  // See olek hoiab meid "Parooli vahetamise" vaates, isegi kui oleme sisse logitud
+  const [recoveryMode, setRecoveryMode] = useState(false);
 
   useEffect(() => {
-    // 1. Kontrolli seansi olekut käivitamisel
+    // 1. Algne kontroll
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
-      setInitialized(true); // Märgime, et oleme kontrolliga valmis
+      setInitialized(true); 
     });
 
-    // 2. Seadista reaalajas kuulaja olekumuutustele
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    // 2. Sündmuste kuulaja
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log("Auth Event:", event); 
+
+      // Kui Supabase ütleb, et käib parooli taastamine, lülita sisse erirežiim
+      if (event === 'PASSWORD_RECOVERY') {
+        setRecoveryMode(true);
+      }
+      
       setSession(session);
     });
     
-    // Puhasta kuulaja komponendi eemaldamisel
     return () => subscription.unsubscribe();
   }, []);
 
   // Väljalogimise funktsioon
   async function signOut() {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-        Alert.alert("Väljalogimise viga", error.message);
-    }
+    await supabase.auth.signOut();
+    setRecoveryMode(false);
   }
 
-  // 3. UUS: Kui äpp alles käivitub ja kontrollib sisselogimist, näita laadimisringi
+  // Laadimisvaade
   if (!initialized) {
     return (
       <View style={[styles.container, styles.centerContent]}>
-        <ActivityIndicator size="large" color="#0000ff" />
+        <ActivityIndicator size="large" color="#F5A858" />
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      {/* Kui seanss on olemas, kuva sisselogitud sisu */}
-      {session && session.user ? (
+      
+      {/* 1. RECOVERY MODE (Parooli muutmine) */}
+      {/* See vaade on eelisjärjekorras, kui recoveryMode on true */}
+      {session && recoveryMode ? (
+        <PasswordReset 
+          initialStep="update" // Ütleme, et alusta kohe parooli muutmisest
+          onBack={async () => {
+            // KUI VALMIS (või katkestatud):
+            // 1. Logi kasutaja välja (et ta peaks uue parooliga sisse logima)
+            await supabase.auth.signOut();
+            // 2. Lülita välja recovery mode
+            setRecoveryMode(false);
+          }} 
+        />
+      ) 
+      
+      /* 2. TAVALINE SISSELOGITUD OLEK (Avaleht) */
+      : session && session.user ? (
         <View style={styles.loggedInContainer}>
-          <Text style={styles.welcomeText}>
-            Tere tulemast, {session.user.email}! (Sisselogitud)
-          </Text>
-          
-          {/* Väljalogimise nupp */}
+          <Text style={styles.welcomeText}>Tere tulemast!</Text>
+          <Text style={styles.emailText}>{session.user.email}</Text>
           <View style={styles.signOutButtonContainer}>
-              <Button 
-                title="Logi välja" 
-                onPress={signOut} 
-                color="#ef4444" // Punane nupp
-              />
+              <Button title="Logi välja" onPress={signOut} color="#ef4444" />
           </View>
-
         </View>
-      ) : (
-        // Kui seanssi pole, kuva autentimise vorm (mis sisaldab nüüd ka parooli taastamist)
+      ) 
+      
+      /* 3. VÄLJALOGITUD OLEK (Sisselogimine) */
+      : (
         <Auth />
       )}
+
     </View>
   );
 }
@@ -73,8 +92,7 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
-    // Eemaldasin siit 'justifyContent' ja 'alignItems', et Auth komponent saaks ise ruumi hallata
+    backgroundColor: '#000000', 
   },
   centerContent: {
     justifyContent: 'center',
@@ -85,12 +103,19 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
+    backgroundColor: '#000000',
   },
   welcomeText: {
-    fontSize: 20, 
+    fontSize: 24, 
     textAlign: 'center',
-    marginBottom: 20,
+    marginBottom: 10,
     fontWeight: '600',
+    color: '#ffffff',
+  },
+  emailText: {
+    fontSize: 16,
+    color: '#cccccc',
+    marginBottom: 20,
   },
   signOutButtonContainer: {
     marginTop: 20,
