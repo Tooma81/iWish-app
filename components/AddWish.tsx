@@ -80,12 +80,6 @@ export default function AddWish({ onCloseModal }: { onCloseModal: () => void }) 
     finishAuth()
   } */
 
-  async function addWish() {
-    startSave()
-    //siia vaja luua supabase salvestamise loogika
-    Alert.alert("Wish added")
-    onCloseModal();
-  }
 
 //Pildi tegemise loogika
 const takePhoto = async () => {
@@ -132,8 +126,94 @@ const takePhoto = async () => {
       // Salvestame pildi URI
       setImageUri(result.assets[0].uri);
     }
-
   };
+
+// Pildi üleslaadimine (abifunktsioon)
+// Võtab vastu kohaliku pildi URI ja kasutaja ID --> tagastab Storage'i URL-i
+async function uploadImage(uri: string, userId: string): Promise<string | null> {
+  const fileExtension = uri.split('.').pop();
+  // Loome kordumatu failinime, et vältida konflikte
+  const fileName = `${userId}/${Date.now()}.${fileExtension}`; 
+  
+  // 1. Tõmbame pildi binaarandmed
+  const response = await fetch(uri);
+  const blob = await response.blob();
+  
+  // 2. Laadime Supabase Storage'i
+  const { data, error } = await supabase.storage
+    .from('wish_images') // Teie Storage Bucket'i nimi
+    .upload(fileName, blob, {
+      cacheControl: '3600',
+      upsert: false,
+    });
+    
+  if (error) {
+    throw new Error('Pildi üleslaadimine ebaõnnestus: ' + error.message);
+  }
+
+  // 3. Loome avaliku URL-i
+  const { data: publicUrlData } = supabase.storage
+    .from('wish_images')
+    .getPublicUrl(fileName);
+    
+  return publicUrlData.publicUrl;
+}
+
+// UUS: Arendatud addWish funktsioon
+async function addWish() {
+const { data: userData } = await supabase.auth.getUser(); // Kasutan userData, et vältida nimede konflikti
+const user = userData.user; // 'user' = ainult kasutajaandmed
+
+if (!user) { // Nüüd kontrollite otse kasutaja objekti
+  setErrorMessage("Kasutaja pole sisse logitud.");
+  return;
+}
+  
+  startSave();
+
+  let imageUrl: string | null = null;
+  
+  try {
+    // 1. Pildi üleslaadimine (kui URI on olemas)
+    if (imageUri) {
+      imageUrl = await uploadImage(imageUri, user.id);
+    }
+
+    // 2. Andmete salvestamine andmebaasi
+    const { error: dbError } = await supabase
+      .from('wishes') // Teie tabeli nimi
+      .insert({
+        user_id: user.id,
+        title: title,
+        link: link, // Kuigi te seda veel ei kuva, on see hea salvestada
+        description: description,
+        image_url: imageUrl,
+        came_true: false, // Vaikimisi false, home-actual vaates kuvamiseks
+      });
+
+    if (dbError) {
+      setErrorMessage(dbError.message);
+      finishSave();
+      return;
+    }
+
+    // 3. Õnnestunud salvestamine
+    Alert.alert("Soov lisatud", "Sinu soov on edukalt salvestatud!");
+    
+    // Puhasta olekud ja sulge modaal
+    setTitle('');
+    setLink('');
+    setDescription('');
+    setImageUri(null);
+    onCloseModal(); // Eeldab, et võtate vastu onCloseModal propina!
+
+  } catch (error: any) {
+    setErrorMessage(error.message || "Tundmatu viga salvestamisel.");
+  }
+  
+  finishSave();
+}
+
   // Peamine renderdamine: valib vaate
   return (
     <View style={styles.addWishContainer}>
