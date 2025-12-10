@@ -1,15 +1,16 @@
 import 'react-native-url-polyfill/auto'; 
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, Text, Button, ActivityIndicator } from 'react-native'; 
+// Veendu, et impordid vastavad sinu failistruktuurile (kas @/ või ../)
 import { supabase } from '@/utils/supabase'; 
 import Auth from '@/components/Auth'; 
-import PasswordChange from '@/components/PasswordChange'; // UUS IMPORT
+import PasswordChange from '@/components/PasswordChange';
 import { Session } from '@supabase/supabase-js'; 
 
 export default function App() {
   const [session, setSession] = useState<Session | null>(null);
   const [initialized, setInitialized] = useState(false);
-  const [showPasswordChange, setShowPasswordChange] = useState(false); // Sundrežiim
+  const [showPasswordChange, setShowPasswordChange] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -18,10 +19,13 @@ export default function App() {
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      // Kui Supabase tuvastab parooli taastamise sündmuse
+      console.log("Supabase Event:", event); 
+
+      // See on automaatne tuvastus (nt lingist tulles)
       if (event === 'PASSWORD_RECOVERY') {
         setShowPasswordChange(true);
       }
+      
       setSession(session);
     });
     
@@ -38,12 +42,12 @@ export default function App() {
   return (
     <View style={styles.container}>
       
-      {/* 1. PRIORITEET: Parooli muutmise leht */}
+      {/* 1. KAS NÄITAME PAROOLI VAHETUST? (Kõrgeim prioriteet) */}
       {showPasswordChange ? (
         <PasswordChange onSuccess={handleLogout} />
       ) 
       
-      /* 2. PRIORITEET: Tavaline sisselogitud leht */
+      /* 2. KASUTAJA ON SISSE LOGITUD? */
       : session && session.user ? (
         <View style={styles.center}>
           <Text style={{color: 'white', fontSize: 20}}>Tere tulemast!</Text>
@@ -52,11 +56,14 @@ export default function App() {
         </View>
       ) 
       
-      /* 3. PRIORITEET: Sisselogimine / Koodi sisestamine */
+      /* 3. KASUTAJA ON VÄLJAS? (Auth vaade) */
       : (
         <Auth 
-          // See funktsioon käivitab sundrežiimi
-          onReadyForPasswordUpdate={() => setShowPasswordChange(true)} 
+          // See funktsioon kutsutakse siis, kui kood on edukalt sisestatud
+          onReadyForPasswordUpdate={() => {
+             console.log("App.tsx sai signaali! Avan parooli muutmise vaate.");
+             setShowPasswordChange(true);
+          }} 
         />
       )}
     </View>
