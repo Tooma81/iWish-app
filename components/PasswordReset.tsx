@@ -11,15 +11,17 @@ type ResetStep = 'request' | 'verify' | 'update';
 interface PasswordResetProps {
   onBack: () => void;
   initialStep?: ResetStep;
-  onVerified?: () => void; // See funktsioon tuleb App.tsx-st
+  onVerified?: () => void; 
 }
 
+// ---------------------------------------------------------------------------
+// PARANDUS: Lisasin 'onVerified' siia loogeliste sulgude sisse!
+// Enne oli tõenäoliselt: ({ onBack, initialStep = 'request' }: ...)
+// ---------------------------------------------------------------------------
 export default function PasswordReset({ onBack, initialStep = 'request', onVerified }: PasswordResetProps) {
   const [step, setStep] = useState<ResetStep>(initialStep);
   const [email, setEmail] = useState('');
   const [token, setToken] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
   // 1. Saada kood
@@ -38,8 +40,8 @@ export default function PasswordReset({ onBack, initialStep = 'request', onVerif
     if (cleanToken.length !== 8) { Alert.alert('Viga', 'Kood peab olema 8 numbrit.'); return; }
     
     setLoading(true);
-    console.log("Kontrollin koodi...");
-
+    
+    // verifyOtp logib kasutaja sisse
     const { error } = await supabase.auth.verifyOtp({
       email: email.trim(), token: cleanToken, type: 'recovery',
     });
@@ -48,35 +50,15 @@ export default function PasswordReset({ onBack, initialStep = 'request', onVerif
       setLoading(false);
       Alert.alert('Viga', error.message);
     } else {
-      console.log("Kood õige! Käivitan onVerified...");
-      // KRIITILINE HETK:
-      // Kui onVerified on olemas, kutsume seda. App.tsx lülitab sisse forceUpdateMode.
-      // Me ei tee setLoading(false), sest tahame sujuvat üleminekut uuele vaatele.
+      // EDUKAS!
+      // Siin tekkis viga, sest 'onVerified' polnud defineeritud
       if (onVerified) {
         onVerified();
       } else {
         // Tagavaraplaan, kui komponenti kasutatakse eraldiseisvana
-        setStep('update');
+        setStep('update'); // Kuna PasswordChange lehte pole veel ühendatud ilma Authita
         setLoading(false);
       }
-    }
-  };
-
-  // 3. Uuenda parool ja lõpeta
-  const updateUserPassword = async () => {
-    if (newPassword.length < 6) { Alert.alert('Viga', 'Liiga lühike parool.'); return; }
-    if (newPassword !== confirmPassword) { Alert.alert('Viga', 'Paroolid ei kattu.'); return; }
-
-    setLoading(true);
-    const { error } = await supabase.auth.updateUser({ password: newPassword });
-    setLoading(false);
-
-    if (error) Alert.alert('Viga', error.message);
-    else {
-      Alert.alert('Edukas', 'Parool muudetud! Logi sisse.', [{ 
-          text: 'OK', 
-          onPress: onBack // See viib App.tsx-is handlePasswordUpdated() -> signOut()
-      }]);
     }
   };
 
@@ -89,7 +71,7 @@ export default function PasswordReset({ onBack, initialStep = 'request', onVerif
       <View style={styles.contentContainer}>
         <View style={styles.headerContainer}>
           <Image style={styles.logoImage} source={LOGO_SOURCE} />
-          <Text style={styles.headerTitle}>{step === 'update' ? 'Set New Password' : 'Reset Password'}</Text>
+          <Text style={styles.headerTitle}>Reset Password</Text>
         </View>
 
         {/* STEP 1: EMAIL */}
@@ -122,31 +104,9 @@ export default function PasswordReset({ onBack, initialStep = 'request', onVerif
           </View>
         )}
 
-        {/* STEP 3: UUS PAROOL */}
-        {step === 'update' && (
-          <View>
-            <Text style={styles.description}>Sisesta uus parool.</Text>
-            <View style={styles.verticallySpaced}>
-              <Text style={styles.label}>New Password</Text>
-              <TextInput style={styles.input} placeholder="********" placeholderTextColor="#9b9999ff"
-                value={newPassword} onChangeText={setNewPassword} secureTextEntry />
-            </View>
-            <View style={styles.verticallySpaced}>
-              <Text style={styles.label}>Confirm Password</Text>
-              <TextInput style={styles.input} placeholder="********" placeholderTextColor="#9b9999ff"
-                value={confirmPassword} onChangeText={setConfirmPassword} secureTextEntry />
-            </View>
-            <TouchableOpacity style={styles.bigOrangeButton} onPress={updateUserPassword} disabled={loading}>
-              {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.bigOrangeButtonText}>Update Password</Text>}
-            </TouchableOpacity>
-          </View>
-        )}
-
-        {step !== 'update' && (
-          <TouchableOpacity style={styles.backButton} onPress={onBack}>
-            <Text style={styles.backButtonText}>Back to Sign In</Text>
-          </TouchableOpacity>
-        )}
+        <TouchableOpacity style={styles.backButton} onPress={onBack}>
+          <Text style={styles.backButtonText}>Back to Sign In</Text>
+        </TouchableOpacity>
       </View>
     </LinearGradient>
   );
