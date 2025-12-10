@@ -1,124 +1,180 @@
 // components/Wishlist.tsx
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, ActivityIndicator } from 'react-native';
-import { supabase } from '@/utils/supabase';
-import WishItem from './WishItem';
 
+import { 
+  Alert, 
+  FlatList, 
+  StyleSheet, 
+  View,
+  Image,
+  Dimensions,
+  TouchableOpacity,
+  Text
+} from 'react-native'; 
+
+import { supabase } from '@/utils/supabase'; 
+import WishItem from './WishItem'; 
+
+// Eeldame Wish tüübi definitsiooni
 interface Wish {
   id: number;
   title: string;
-  image_url: string | null;
+  link?: string;
+  description?: string;
+  image_url?: string;
   came_true: boolean;
 }
 
-interface WishlistProps {
-  cameTrue: boolean;
-}
-
-export default function Wishlist({ cameTrue }: WishlistProps) {
-  const [wishes, setWishes] = useState<Wish[]>([]);
+export default function Wishlist({ cameTrue }: { cameTrue: boolean }) {
+  
+  // data olekud
+  const [wishes, setWishes] = useState<Wish[]>([]); // Lahendab 'wishes' puudumise
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  const fetchWishes = async () => {
+  // data laadimine
+  const loadWishes = async () => {
     setLoading(true);
-    
-    // Hankige praeguse kasutaja ID
-    const { data: userData } = await supabase.auth.getUser();
-    const user = userData.user;
-
-    if (!user) {
-        setError("Kasutaja pole sisse logitud.");
-        setLoading(false);
-        return;
-    }
-    
-    // Andmete pärimine (Select)
-    const { data, error } = await supabase
+    const { 
+      data, 
+      error 
+    } = await supabase
       .from('wishes')
-      .select('id, title, image_url, came_true')
-      .eq('user_id', user.id) // Filter: Ainult praeguse kasutaja soovid
-      .eq('came_true', cameTrue) // Filter: 'Actual' (false) või 'Came true' (true)
-      .order('created_at', { ascending: false }); // Sorteerimine uuemad ees
+      .select('*')
+      .order('id', { ascending: false });
 
     if (error) {
-      setError(error.message);
-      setLoading(false);
-      return;
+      Alert.alert("Viga", "Soovide laadimine ebaõnnestus: " + error.message);
+    } else {
+      setWishes(data || []);
     }
-
-    setWishes(data || []);
     setLoading(false);
   };
 
   useEffect(() => {
-    fetchWishes();
-
-    // Reaalaja kuulaja seadistamine (valikuline: tagab kohese uuenduse pärast salvestamist)
+    loadWishes();
+    // Lisame reaalajas uuenduse kuulaja
     const channel = supabase
-      .channel('wishes_changes')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'wishes' }, payload => {
-        // Kontrollime, kas muudatus vastab praegusele vaatele
-        if (payload.new.came_true === cameTrue) {
-             // Kui uus kirje on lisatud, laadi andmed uuesti
-            fetchWishes(); 
-        }
-      })
-      .subscribe();
-      
+        .channel('schema-db-changes')
+        .on(
+            'postgres_changes',
+            { 
+                event: '*', 
+                schema: 'public', 
+                table: 'wishes' 
+            },
+            () => loadWishes()
+        )
+        .subscribe();
+        
     return () => {
-      supabase.removeChannel(channel);
+        supabase.removeChannel(channel);
     };
-  }, [cameTrue]);
 
+  }, []);
 
+  // supabase funktsioonid (Käsitsevad WishItem'i nupuvajutusi)
+  
+// Uuendatud funktsioon: Toggle'b (pöörab ümber) came_true väärtuse
+  const handleMarkComplete = async (wishId: number) => {
+    // 1. Leia soov andmete hulgast, et näha selle praegust olekut
+    const wishToToggle = wishes.find(w => w.id === wishId);
+    
+    if (!wishToToggle) return; // Kui soovi ei leita, lõpeta
+    
+    // 2. Arvuta uus olek (vastupidine praegusele)
+    const newStatus = !wishToToggle.came_true;
+
+    // 3. Uuenda Supabase'i andmebaasis
+    const { error } = await supabase
+      .from('wishes')
+      // Määra olek vastupidiseks!
+      .update({ came_true: newStatus }) 
+      .eq('id', wishId);
+
+    if (error) {
+      const action = newStatus ? "täidetuks märkimine" : "tagasi 'Actual'-iks muutmine";
+      Alert.alert("Viga", `Soovi ${action} ebaõnnestus: ` + error.message);
+    } else {
+      loadWishes(); 
+    }
+  };
+  
+  const handleDeleteWish = async (wishId: number) => {
+    // Kustuta soov andmebaasist
+    const { error } = await supabase
+      .from('wishes')
+      .delete()
+      .eq('id', wishId);
+
+    if (error) {
+      Alert.alert("Viga", "Soovi kustutamine ebaõnnestus: " + error.message);
+    } else {
+      loadWishes(); 
+    }
+  };
+
+  
+  // Filtreerib soovid vastavalt praegusele vaatele ("Actual" vs "Came true")
+  const filteredWishes = wishes.filter((w: Wish) => w.came_true === cameTrue); 
+
+  // laadimise teade
   if (loading) {
-    return <ActivityIndicator size="large" color="#C67C4E" style={styles.loader} />;
+    return (
+        <View style={styles.loadingContainer}>
+            <Text style={styles.loadingText}>Laadimine...</Text>
+        </View>
+    );
+  }
+  
+  // tühja nimekirja teade
+  if (filteredWishes.length === 0) {
+      const message = cameTrue
+        ? "Sul ei ole veel täitunud soove. Lisa mõni soov!"
+        : "Lisa esimene soov, mida sa tõeliselt tahad!";
+      return (
+          <View style={styles.loadingContainer}>
+              <Text style={styles.loadingText}>{message}</Text>
+          </View>
+      );
   }
 
-  if (error) {
-    return <Text style={styles.errorText}>Viga andmete laadimisel: {error}</Text>;
-  }
-
-  // Ruudustiku stiil FlatList abil (numColumns={2})
   return (
     <FlatList
-      data={wishes}
+      data={filteredWishes}
+      numColumns={2}
       keyExtractor={(item) => item.id.toString()}
-      renderItem={({ item }) => <WishItem wish={item} />}
-      numColumns={2} // <-- Ruudustiku (grid) kuvamine
-      contentContainerStyle={styles.listContainer}
+      // funktsioonid --> WishItem'ile
+      renderItem={({ item }) => (
+        <WishItem 
+          wish={item} 
+          onMarkComplete={handleMarkComplete} 
+          onDelete={handleDeleteWish} 
+        />
+      )}
+      // Ruudustiku paigutus:
+      contentContainerStyle={styles.listContent}
       columnWrapperStyle={styles.columnWrapper}
-      ListEmptyComponent={<Text style={styles.emptyText}>Soove pole lisatud.</Text>}
     />
   );
 }
 
 const styles = StyleSheet.create({
-  loader: { 
-    flex: 1, 
-    justifyContent: 'center' 
-  },
-  errorText: { 
-    color: 'red', 
-    textAlign: 'center', 
-    marginTop: 20 
-  },
-  listContainer: {
-    paddingVertical: 10,
-    paddingHorizontal: 5,
-    paddingBottom: 20,
+  loadingContainer: {
     flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    fontSize: 16,
+    color: '#666',
+  },
+  listContent: {
+    // nimekiri
+    paddingHorizontal: 5, 
+    paddingBottom: 20, 
   },
   columnWrapper: {
-    // tagab vahed veergude vahel
+    // kaks itemit mahuvad alati ära
     justifyContent: 'space-between',
-    marginBottom: 10,
   },
-  emptyText: {
-    textAlign: 'center',
-    marginTop: 40,
-    color: '#888',
-    fontSize: 16,
-  }
 });

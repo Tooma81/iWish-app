@@ -113,7 +113,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   homeNavContainer: {
-    height: 60,
+    height: 50,
     flexDirection: 'row',
     justifyContent: 'space-between', 
     alignItems: 'center',
