@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Alert, StyleSheet, View, Dimensions } from 'react-native';
 import { supabase } from '../utils/supabase';
+import * as ImagePicker from 'expo-image-picker';
 
 // Impordin abikomponendid
 import AddWishForm from './AddWishForm';
@@ -8,12 +9,13 @@ import AddWishForm from './AddWishForm';
 const screenHeight = Dimensions.get('window').height;
 const screenWidth = Dimensions.get('window').width;
 
-export default function AddWish() {
+export default function AddWish({ onCloseModal }: { onCloseModal: () => void }) {
   const [title, setTitle] = useState('')
   const [link, setLink] = useState('')
   const [description, setDescription] = useState('') 
   const [loading, setLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null) 
+  const [imageUri, setImageUri] = useState<string | null>(null);
   
   // Puhastab veateate ja seab laadimise
   const startSave = () => {
@@ -78,10 +80,139 @@ export default function AddWish() {
     finishAuth()
   } */
 
-  async function addWish() {
-    startSave()
-    Alert.alert("Wish added")
+
+//Pildi tegemise loogika
+const takePhoto = async () => {
+  // 1. Küsi kaamera ja meediakogu (et tehtud pilti salvestada) õiguseid
+  const { status: cameraStatus } = await ImagePicker.requestCameraPermissionsAsync();
+  const { status: mediaLibraryStatus } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+  if (cameraStatus !== 'granted' || mediaLibraryStatus !== 'granted') {
+    Alert.alert('Permission needed', 'Sorry, we need camera and photo library permissions to take and save a picture!');
+    return;
   }
+
+  // 2. Käivita kaamera
+  let result = await ImagePicker.launchCameraAsync({
+    mediaTypes: ImagePicker.MediaTypeOptions.Images,
+    allowsEditing: true, // Lubab kasutajal pilti lõigata
+    aspect: [4, 3], 
+    quality: 1, 
+  });
+
+  if (!result.canceled) {
+    // 3. Salvesta tehtud pildi URI olekusse
+    setImageUri(result.assets[0].uri);
+  }
+};
+
+  // Pildi valimise loogika
+  const pickImage = async () => {
+    // Kontrollime õiguseid (Android/iOS)
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission needed', 'Sorry, we need camera roll permissions to make this work!');
+      return;
+    }
+
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true, // Lubab kasutajal pilti lõigata
+      aspect: [4, 3], // Pildi suhe
+      quality: 1, // Kvaliteet
+    });
+
+    if (!result.canceled) {
+      // Salvestame pildi URI
+      setImageUri(result.assets[0].uri);
+    }
+  };
+
+// Pildi üleslaadimine (abifunktsioon)
+// Võtab vastu kohaliku pildi URI ja kasutaja ID --> tagastab Storage'i URL-i
+async function uploadImage(uri: string, userId: string): Promise<string | null> {
+  const fileExtension = uri.split('.').pop();
+  // Loome kordumatu failinime, et vältida konflikte
+  const fileName = `${userId}/${Date.now()}.${fileExtension}`; 
+  
+  // 1. Tõmbame pildi binaarandmed
+  const response = await fetch(uri);
+  const blob = await response.blob();
+  
+  // 2. Laadime Supabase Storage'i
+  const { data, error } = await supabase.storage
+    .from('wish_images') // Teie Storage Bucket'i nimi
+    .upload(fileName, blob, {
+      cacheControl: '3600',
+      upsert: false,
+    });
+    
+  if (error) {
+    throw new Error('Pildi üleslaadimine ebaõnnestus: ' + error.message);
+  }
+
+  // 3. Loome avaliku URL-i
+  const { data: publicUrlData } = supabase.storage
+    .from('wish_images')
+    .getPublicUrl(fileName);
+    
+  return publicUrlData.publicUrl;
+}
+
+// UUS: Arendatud addWish funktsioon
+async function addWish() {
+const { data: userData } = await supabase.auth.getUser(); // Kasutan userData, et vältida nimede konflikti
+const user = userData.user; // 'user' = ainult kasutajaandmed
+
+if (!user) { // Nüüd kontrollite otse kasutaja objekti
+  setErrorMessage("Kasutaja pole sisse logitud.");
+  return;
+}
+  
+  startSave();
+
+  let imageUrl: string | null = null;
+  
+  try {
+    // 1. Pildi üleslaadimine (kui URI on olemas)
+    if (imageUri) {
+      imageUrl = await uploadImage(imageUri, user.id);
+    }
+
+    // 2. Andmete salvestamine andmebaasi
+    const { error: dbError } = await supabase
+      .from('wishes') // Teie tabeli nimi
+      .insert({
+        user_id: user.id,
+        title: title,
+        link: link, // Kuigi te seda veel ei kuva, on see hea salvestada
+        description: description,
+        image_url: imageUrl,
+        came_true: false, // Vaikimisi false, home-actual vaates kuvamiseks
+      });
+
+    if (dbError) {
+      setErrorMessage(dbError.message);
+      finishSave();
+      return;
+    }
+
+    // 3. Õnnestunud salvestamine
+    Alert.alert("Soov lisatud", "Sinu soov on edukalt salvestatud!");
+    
+    // Puhasta olekud ja sulge modaal
+    setTitle('');
+    setLink('');
+    setDescription('');
+    setImageUri(null);
+    onCloseModal(); // Eeldab, et võtate vastu onCloseModal propina!
+
+  } catch (error: any) {
+    setErrorMessage(error.message || "Tundmatu viga salvestamisel.");
+  }
+  
+  finishSave();
+}
 
   // Peamine renderdamine: valib vaate
   return (
@@ -95,7 +226,11 @@ export default function AddWish() {
         setDescription={setDescription}
         loading={loading}
         errorMessage={errorMessage}
-        addWish={addWish} />
+        addWish={addWish}
+        imageUri={imageUri}
+        onPickImage={pickImage}
+        onTakePhoto={takePhoto}
+        />
     </View>
   );
 }

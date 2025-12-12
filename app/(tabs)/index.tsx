@@ -87,8 +87,9 @@ export default function App() {
             onClose={() => setModalVisible(false)}
             title="Add a wish"
           >
-            <AddWish />
-          </AppModal>
+            {/* ANNAME SULGEMISFUNKTSIOONI AddWish komponendile */}
+            <AddWish onCloseModal={() => setModalVisible(false)} />
+            </AppModal>
         </>
       ) : (
         // Kui seanssi pole, kuva autentimise vorm
@@ -112,12 +113,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   homeNavContainer: {
-    flex: 1,
+    height: 50,
     flexDirection: 'row',
-    justifyContent: 'space-evenly', 
-    width: 20,
+    justifyContent: 'space-between', 
+    alignItems: 'center',
+    paddingHorizontal: 10, // Lisab veidi ruumi servadele
+    paddingVertical: 8,
+    width: '100%',
     margin: 10,
-    minWidth: screenWidth,
     alignSelf: 'center',
   },
   homeNavButton: {
