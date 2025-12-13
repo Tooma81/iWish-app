@@ -1,98 +1,303 @@
-import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, Text, Alert } from 'react-native'; // Lisasime Button ja Alert
-// See import viitab Sinu puhastatud failile utils/supabase
-import { supabase } from '@/utils/supabase'; 
-import Auth from '@/components/Auth'; // Sisselogimise/Registreerimise vaade
-import { Session } from '@supabase/supabase-js'; // Session tüüp
-import { useNavigation } from 'expo-router';
-import { customTabBarStyle } from "@/constants/tab-bar";
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, ActivityIndicator, Alert, Modal, Button } from 'react-native';
+import {
+  fetchFriendsList,
+  removeFriend,
+  acceptFriendRequest,
+  searchUsersByUsername,
+  sendFriendRequest,
+  Friend // Impordime Friend tüübi, mille defineerisime services/friendService.ts failis
+} from '@/services/friendService'; // Asenda õige teega
 import { ThemedButton } from '@/components/themed-button';
+import AppModal from '@/components/app-modal';
+import AddWish from '@/components/AddWish';
+import Wishlist from '@/components/Wishlist';
+import AddWishForm from '@/components/AddWishForm';
+import AddFriend from '@/components/AddFriend'; // Asenda õige teega
 
-export default function App() {
-  const [session, setSession] = useState<Session | null>(null);
-  const navigation = useNavigation(); 
-
-  useEffect(() => {
-    // 1. Kontrolli seansi olekut käivitamisel
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-    });
-
-    // 2. Seadista reaalajas kuulaja olekumuutustele
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-    });
-    
-    // Puhasta kuulaja komponendi eemaldamisel
-    return () => subscription.unsubscribe();
+//PÕHIKOMPONENT JA ANDMETE LAADIMINE:
+export default function FriendsScreen() {
+  const [friends, setFriends] = useState<Friend[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [isAddFriendModalVisible, setIsAddFriendModalVisible] = useState(false); // Uus olek
+  
+  // Funktsioon sõprade nimekirja värskendamiseks
+  const loadFriends = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await fetchFriendsList();
+      setFriends(data);
+    } catch (error) {
+      console.error('Sõprade laadimine ebaõnnestus:', error);
+      Alert.alert('Viga', 'Sõprade laadimine ebaõnnestus.');
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
+  // Käivitame laadimise komponendi loomisel
   useEffect(() => {
-    navigation.setOptions({
-      headerShown: !!session,   // show header only when logged in
-      tabBarStyle: session
-        ? customTabBarStyle                            // logged in → default tab bar
-        : { display: "none" },          // logged out → hide tab bar
-    });
-  }, [session]);
+    loadFriends();
+  }, [loadFriends]);
 
-  // Väljalogimise funktsioon
-  async function signOut() {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-        Alert.alert("Väljalogimise viga", error.message);
+  // Filtreerime nimekirja kuvamiseks
+  const acceptedFriends = friends.filter(f => f.status === 'accepted');
+  const pendingRequests = friends.filter(f => f.status === 'pending'); // Nii need, mille saatsin, kui need, mis mulle saadeti
+
+//TEGEVUSTE HALDURID:
+// --- A. SÕBRA EEMALDAMINE ---
+  const handleRemoveFriend = async (friendshipId: number) => {
+    Alert.alert(
+      'Kinnitus', 
+      'Kas oled kindel, et soovid sõbra eemaldada?',
+      [
+        { text: 'Tühista', style: 'cancel' },
+        { 
+          text: 'Eemalda', 
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await removeFriend(friendshipId);
+              loadFriends(); // Värskendame nimekirja
+              Alert.alert('Eemaldatud', 'Sõber eemaldati edukalt.');
+            } catch (error) {
+              Alert.alert('Viga', 'Sõbra eemaldamine ebaõnnestus.');
+            }
+          }
+        }
+      ]
+    );
+  };
+  
+  // --- B. SÕPRUSETTEPANEKU VASTUVÕTMINE ---
+  const handleAcceptRequest = async (friendshipId: number) => {
+    try {
+      await acceptFriendRequest(friendshipId);
+      loadFriends(); // Värskendame nimekirja
+      Alert.alert('Vastu võetud', 'Sõprus kinnitatud!');
+    } catch (error) {
+      Alert.alert('Viga', 'Kinnitamine ebaõnnestus.');
     }
-  }
+  };
 
+
+  //KOMPONENTIDE RENDERDAMINE:
+  // --- Komponent ühe sõbra kuvamiseks nimekirjas ---
+  const renderFriendItem = ({ item }: { item: Friend }) => (
+    <View style={styles.friendItem}>
+      {/* Avatar/Pilt puudub praegu - kasutame Teksti */}
+      <Text style={styles.friendName}>{item.username}</Text>
+      <Text style={styles.friendRelationship}>{item.relationship}</Text>
+      
+      {/* Eemaldamise nupp (ainult Accepted sõpradel) */}
+      {item.status === 'accepted' && (
+        <TouchableOpacity onPress={() => handleRemoveFriend(item.id)} style={styles.removeButton}>
+          <Text style={styles.removeButtonText}>X</Text>
+        </TouchableOpacity>
+      )}
+      
+      {/* Kinnitamise nupp (kui keegi teine on saatnud mulle ettepaneku) */}
+      {item.status === 'pending' && (
+        <TouchableOpacity onPress={() => handleAcceptRequest(item.id)} style={styles.acceptButton}>
+          <Text style={styles.acceptButtonText}>Võta vastu</Text>
+        </TouchableOpacity>
+      )}
+      
+      {/* Kui 'pending' ja olen ise saatja, näitan staatust */}
+      {item.status === 'pending' && item.profile_id !== friends.find(f => f.status === 'accepted')?.profile_id && (
+        <Text style={styles.pendingText}>Ootel...</Text>
+      )}
+    </View>
+  );
+
+  // --- PÕHI RENDERDAMINE ---
   return (
-    <View style={styles.container}>
-      {/* Kui seanss on olemas, kuva sisselogitud sisu */}
-      {session && session.user ? (
-        <View style={styles.loggedInContainer}>
-          <Text style={styles.welcomeText}>
-            Tere tulemast, {session.user.email}! (Sisselogitud)
-          </Text>
-          
-          {/* UUS: Väljalogimise nupp */}
-          <View style={styles.signOutButtonContainer}>
-              <ThemedButton 
-                tone='border'
-                title="Logi välja" 
-                onPress={signOut} 
-              />
-          </View>
-
+<View style={styles.container}>
+      
+      {/* 1. Modaal Sõbra Lisamiseks (Uus, ilus modaal) */}
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={isAddFriendModalVisible}
+        onRequestClose={() => setIsAddFriendModalVisible(false)}
+      >
+        <View style={styles.centeredView}>
+          <AddFriend 
+            onCloseModal={() => setIsAddFriendModalVisible(false)} 
+            onFriendAdded={loadFriends} 
+          />
         </View>
+      </Modal>
+      
+      {/* 2. Modaal Vana Otsinguloogikaga (Kui hoiate seda) */}
+      {/* Kui te 'vana' otsinguloogikat enam ei kasuta, kustutage ka see komponent ja seotud useState-id (isModalVisible, searchTerm, searchResults jne). Pildi järgi kasutate uut `AddFriend` modaali. */}
+      
+      {/* Ülemine navigeerimisriba ja Lisa sõber nupp */}
+      <View style={styles.header}>
+        <Text style={styles.title}>Minu sõbrad</Text>
+        <TouchableOpacity onPress={() => setIsAddFriendModalVisible(true)} style={styles.addButton}>
+          <Text style={styles.addButtonText}>Lisa sõber</Text> 
+        </TouchableOpacity>
+      </View>
+
+      {loading ? (
+        <ActivityIndicator size="large" color="#FFA500" style={styles.loader} />
       ) : (
-        // Kui seanssi pole, kuva autentimise vorm
-        <Auth />
+        <>
+          {/* Ootel Ettepanekud (näiteks teine sektsioon) */}
+          {pendingRequests.length > 0 && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Ootel (Vastuvõtmiseks)</Text>
+              <FlatList
+                data={pendingRequests}
+                keyExtractor={(item) => item.id.toString()}
+                renderItem={renderFriendItem}
+              />
+            </View>
+          )}
+
+          {/* Kinnitatud sõbrad */}
+          <Text style={styles.sectionTitle}>Kinnitatud sõbrad</Text>
+          {acceptedFriends.length === 0 ? (
+            <Text style={styles.emptyText}>Sõpru pole veel lisatud.</Text>
+          ) : (
+            <FlatList
+              data={acceptedFriends}
+              keyExtractor={(item) => item.id.toString()}
+              renderItem={renderFriendItem}
+            />
+          )}
+        </>
       )}
     </View>
   );
 }
 
+//STIILID:
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
-    justifyContent: 'center', 
-    alignItems: 'stretch',
     padding: 20,
+    backgroundColor: '#fff',
   },
-  loggedInContainer: {
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+  },
+  addButton: {
+    backgroundColor: '#FFA500', // Sarnane teie disaini nupule
+    padding: 10,
+    borderRadius: 5,
+  },
+  addButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  loader: {
+    marginTop: 50,
+  },
+  section: { // LISAGE SEE STIIL!
+    marginBottom: 20, 
+    paddingHorizontal: 10,
+    backgroundColor: '#f9f9f9', // Valikuline, et sektsioon silma paistaks
+    borderRadius: 8,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginTop: 15,
+    marginBottom: 10,
+  },
+  emptyText: {
+    textAlign: 'center',
+    color: '#666',
+    marginTop: 20,
+  },
+  friendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+    justifyContent: 'space-between',
+  },
+  friendName: {
+    fontSize: 16,
+    flex: 1,
+  },
+  friendRelationship: {
+    color: '#888',
+    marginRight: 10,
+  },
+  removeButton: {
+    padding: 8,
+    backgroundColor: '#fdd',
+    borderRadius: 5,
+  },
+  removeButtonText: {
+    color: 'red',
+    fontWeight: 'bold',
+  },
+  acceptButton: {
+    padding: 8,
+    backgroundColor: '#dff',
+    borderRadius: 5,
+  },
+  acceptButtonText: {
+    color: 'green',
+    fontWeight: 'bold',
+  },
+  pendingText: {
+    color: '#FFCC00',
+    fontStyle: 'italic',
+    marginLeft: 10,
+  },
+  
+  // --- Modaal stiilid ---
+  centeredView: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
   },
-  welcomeText: {
-    fontSize: 20, 
-    textAlign: 'center',
-    marginBottom: 20,
-    fontWeight: '600',
+  modalView: {
+    margin: 20,
+    backgroundColor: 'white',
+    borderRadius: 10,
+    padding: 35,
+    alignItems: 'stretch',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+    minWidth: '80%',
   },
-  signOutButtonContainer: {
-    marginTop: 20,
-    width: '100%',
-    maxWidth: 200, // Piirame nupu laiust
-  }
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 15,
+  },
+  input: {
+    height: 40,
+    borderColor: '#ccc',
+    borderWidth: 1,
+    marginBottom: 10,
+    paddingHorizontal: 10,
+    borderRadius: 5,
+  },
+  searchResultItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
 });
