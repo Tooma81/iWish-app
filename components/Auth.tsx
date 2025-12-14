@@ -1,192 +1,74 @@
-import React, { useState } from 'react'
-import { StyleSheet, View, Text, TextInput, Button, Alert, Image } from 'react-native'
-import { supabase } from '@/utils/supabase'
+import React, { useState } from 'react';
+import { Alert, StyleSheet, View } from 'react-native';
+import { supabase } from '../utils/supabase';
+import WelcomeScreen from './WelcomeScreen';
+import AuthForm from './AuthForm';
+import PasswordReset from './PasswordReset'; 
 
-export const unstable_settings = {
-  headerShown: false,
-};
+export type AuthMode = 'welcome' | 'signIn' | 'signUp' | 'forgotPassword';
 
-const LOGO_SOURCE = require('../assets/logo.png'); // Kasutame lokaalset faili
+// Global pildi allikad
+export const LOGO_SOURCE = require('../assets/splash-logo.png');
+export const GOOGLE_ICON = { uri: 'https://img.icons8.com/color/48/000000/google-logo.png' };
+export const FACEBOOK_ICON = { uri: 'https://img.icons8.com/?size=100&id=106163&format=png&color=228BE6' };
 
-export default function Auth() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [errorMessage, setErrorMessage] = useState<string | null>(null) // Uus olek veateate jaoks
+// Defineerime, et Auth võtab vastu funktsiooni
+interface AuthProps {
+  onReadyForPasswordUpdate: () => void;
+}
 
-  // Puhastab veateate ja seab laadimise
-  const startAuth = () => {
-    setLoading(true)
-    setErrorMessage(null) // Puhasta eelmine viga
-  }
+export default function Auth({ onReadyForPasswordUpdate }: AuthProps) {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [mode, setMode] = useState<AuthMode>('welcome');
+  
+  const startAuth = () => { setLoading(true); setErrorMessage(null); }
+  const finishAuth = () => { setLoading(false); }
 
-  // Lõpetab autentimise
-  const finishAuth = () => {
-    setLoading(false)
-  }
-
-  // Sisselogimise funktsioon
   async function signInWithEmail() {
-    startAuth()
-
-    const { error } = await supabase.auth.signInWithPassword({
-      email: email,
-      password: password,
-    })
-
-    if (error) {
-      // Kasutame nüüd sisemist olekut veateate näitamiseks
-      setErrorMessage(error.message)
-    }
-    
-    finishAuth()
+    startAuth();
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) setErrorMessage(error.message);
+    finishAuth();
   }
 
-  // Registreerimise funktsioon
   async function signUpWithEmail() {
-    startAuth()
-
+    startAuth();
     const { error } = await supabase.auth.signUp({
-      email: email,
-      password: password,
-    })
-
-    if (error) {
-      // Kasutame nüüd sisemist olekut veateate näitamiseks
-      setErrorMessage(error.message)
-    } else {
-      // Edukas registreerimine, kuid Supabase nõuab vaikimisi e-posti kinnitust
-      // Saadame meeldetuletuse
-      Alert.alert(
-        "Kinnitusvajalik",
-        "Palun kinnita oma e-posti aadress, et sisse logida. Kontrolli oma postkasti!",
-        [{ text: "OK" }]
-      );
-    }
-    
-    finishAuth()
+      email, password, options: { data: { full_name: name } }
+    });
+    if (error) setErrorMessage(error.message);
+    else { Alert.alert("Konto loodud!", "Palun kinnita e-post."); setMode('signIn'); }
+    finishAuth();
   }
 
   return (
-        <View style={styles.container}>
-      {/* Logo ja päise teksti konteiner */}
-      <View style={styles.headerContainer}>
-        {/* Logo komponent (kasutab lokaalset LOGO_SOURCE) */}
-        <Image 
-            style={styles.logoImage} 
-            source={LOGO_SOURCE} // Nüüd kasutame lokaalset faili
-        />
-        <Text style={styles.header}>iWish Sisselogimine</Text>
-      </View>
-
-      {/* Meili sisestusväli */}
-      <View style={styles.verticallySpaced}>
-        <Text style={styles.label}>Email:</Text>
-        <TextInput
-          style={styles.input}
-          onChangeText={(text) => setEmail(text)}
-          value={email}
-          placeholder="email@aadress.ee"
-          autoCapitalize={'none'}
-          keyboardType={'email-address'} // Parema kasutuskogemuse jaoks
-        />
-      </View>
+    <View style={styles.authContainer}>
+      {mode === 'welcome' && <WelcomeScreen setMode={setMode} />}
       
-      {/* Parooli sisestusväli */}
-      <View style={styles.verticallySpaced}>
-        <Text style={styles.label}>Parool:</Text>
-        <TextInput
-          style={styles.input}
-          onChangeText={(text) => setPassword(text)}
-          value={password}
-          secureTextEntry={true}
-          placeholder="Parool (min 6 tähemärki)" // Lisame vihje parooli pikkuse kohta
-          autoCapitalize={'none'}
+      {(mode === 'signIn' || mode === 'signUp') && (
+        <AuthForm
+          mode={mode} setMode={setMode} email={email} setEmail={setEmail}
+          password={password} setPassword={setPassword} name={name} setName={setName}
+          loading={loading} errorMessage={errorMessage}
+          signInWithEmail={signInWithEmail} signUpWithEmail={signUpWithEmail} 
         />
-      </View>
-
-      {/* VEATEADE (Kuvatakse ainult siis, kui on viga) */}
-      {errorMessage && (
-        <View style={styles.errorBox}>
-          <Text style={styles.errorText}>Viga: {errorMessage}</Text>
-        </View>
       )}
 
-      {/* Sisselogimise nupp */}
-      <View style={styles.buttonContainer}>
-        <Button 
-          title={loading ? "Laeb..." : "Logi sisse"} 
-          disabled={loading || !email || !password} 
-          onPress={() => signInWithEmail()} 
+      {mode === 'forgotPassword' && (
+        <PasswordReset 
+          onBack={() => setMode('signIn')} 
+          // TÄHTIS: Anname funktsiooni edasi!
+          onVerified={onReadyForPasswordUpdate}
         />
-      </View>
-
-      {/* Registreerimise nupp */}
-      <View style={styles.buttonContainer}>
-        <Button 
-          title={loading ? "Laeb..." : "Registreeri"} 
-          disabled={loading || !email || !password} 
-          onPress={() => signUpWithEmail()} 
-        />
-      </View>
+      )}
     </View>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    padding: 20,
-    flex: 1, // Keskendamiseks
-    justifyContent: 'center', // Keskendame sisendvääljad ekraanil
-    alignItems: 'stretch',
-  },
-  // Konteiner logo ja päise jaoks
-  headerContainer: {
-    justifyContent: 'center', 
-    alignItems: 'center',    
-    marginBottom: 20,
-  },
-  // Stiil logo pildi jaoks
-  logoImage: {
-    width: 100,  
-    height: 100, 
-    resizeMode: 'contain', 
-    marginBottom: 30,
-  },
-  header: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-  label: {
-    fontSize: 16,
-    marginBottom: 4,
-  },
-  verticallySpaced: {
-    marginBottom: 10,
-  },
-  input: {
-    height: 40,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    padding: 10,
-    borderRadius: 5,
-  },
-  buttonContainer: {
-    marginTop: 10,
-  },
-  errorBox: {
-    padding: 10,
-    backgroundColor: '#fee2e2', // Punakas taust
-    borderColor: '#ef4444', 
-    borderWidth: 1,
-    borderRadius: 5,
-    marginBottom: 15,
-  },
-  errorText: {
-    color: '#b91c1c', // Tume punane tekst
-    fontWeight: '600',
-    fontSize: 14,
-  }
-})
+  authContainer: { flex: 1, backgroundColor: '#000000', width: '100%', height: '100%' }
+});

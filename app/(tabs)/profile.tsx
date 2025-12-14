@@ -340,4 +340,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#333',
   },
+  signOutButtonContainer: {
+    marginTop: 20,
+    width: '100%',
+    maxWidth: 200, // Piirame nupu laiust
+  }
 });
