@@ -207,7 +207,7 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     alignItems: 'flex-end', 
     marginTop: -5,
-    marginBottom: 15,
+
   },
   forgotPasswordText: {
     color: '#F5A858',
@@ -262,6 +262,7 @@ const styles = StyleSheet.create({
   switchButton: {
     alignItems: 'center',
     marginTop: 10, 
+    marginBottom: '15%',
   },
   switchText: {
     color: '#ffffff',
