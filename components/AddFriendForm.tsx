@@ -35,12 +35,12 @@ export default function AddFriendForm({
     <View style={styles.formContainer}>
         {/* Nimi/Kasutajanimi */}
         <View style={styles.verticallySpaced}>
-          <Text style={styles.label}>Name:</Text>
+          <Text style={styles.label}>e-mail:</Text>
           <TextInput
             style={styles.input}
             onChangeText={setFriendName}
             value={friendName}
-            placeholder="Ann Green"
+            placeholder="maret.vaabel@voco.ee"
             placeholderTextColor="#c5c5c5"
             autoComplete={'username'} // Kasutame sobivat autocomplete väärtust
             autoCapitalize={'none'}
