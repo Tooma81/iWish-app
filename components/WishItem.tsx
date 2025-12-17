@@ -1,10 +1,9 @@
 import React from 'react';
-import { View, Text, Image, StyleSheet, Dimensions, Alert, TouchableOpacity } from 'react-native';
-import { Ionicons } from '@expo/vector-icons'; // Uus import ikoonide jaoks
+import { View, Text, Image, StyleSheet, Dimensions, Pressable, Alert, TouchableOpacity } from 'react-native';
+import { Ionicons, Feather } from '@expo/vector-icons'; // Uus import ikoonide jaoks
 import { ThemedButton } from '@/components/themed-button';
 import { supabase } from '@/utils/supabase';
-import { Feather } from '@expo/vector-icons';
-
+import { useNavigation, useRouter } from 'expo-router';
 
 interface Wish {
   id: number;
@@ -16,7 +15,7 @@ interface Wish {
 }
 
 const { width } = Dimensions.get('window');
-const ITEM_WIDTH = width * 0.48; // Proportsionaalne laius 
+const ITEM_WIDTH = width * 0.46; // Proportsionaalne laius 
 
 interface WishItemProps {
   wish: Wish;
@@ -25,105 +24,106 @@ interface WishItemProps {
 }
 
 export default function WishItem({ wish, onMarkComplete, onDelete }: WishItemProps) {
+  const navigation = useNavigation() as any;
   
   // "Linnukese" ikoon, kui soov tehtud
   const completeIconName = wish.came_true ? 'checkmark-circle' : 'ellipse-outline'; 
   const completeIconColor = wish.came_true ? '#ff9800' : '#ff9800'; // Roheline vs Oranž
 
+  const router = useRouter();
+// Funktsioon detailvaatesse minekuks
+  const handlePress = () => {
+router.push({
+    pathname: "/wish-details",
+    params: { wish: JSON.stringify(wish) } // Expo Routeris on vahel kindlam objekt stringina saata
+  });
+};
+
   return (
-    <View style={styles.card}>
-      
-      {/* -------------------- Pilt / Placeholder -------------------- */}
+    <Pressable 
+      onPress={handlePress}
+      style={({ pressed }) => [
+        styles.card,
+        { opacity: pressed ? 0.9 : 1, transform: [{ scale: pressed ? 0.98 : 1 }] }
+      ]}
+    >
+      {/* Pilt */}
       {wish.image_url ? (
-        <Image 
-          source={{ uri: wish.image_url }} 
-          style={styles.image} 
-        />
+        <Image source={{ uri: wish.image_url }} style={styles.image} />
       ) : (
-        <View style={styles.imagePlaceholder} />
+        <View style={styles.imagePlaceholder}>
+             <Feather name="image" size={40} color="#ccc" />
+        </View>
       )}
       
-      {/* -------------------- 1. KUSTUTAMISE NUPP (X) -------------------- */}
-<TouchableOpacity 
-    // Kasutame stiile, mille me defineerisime allpool
-    style={styles.closeButton} 
-    onPress={() => onDelete(wish.id)} //kustutamise funktsioon ja otsekäivitus
-    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} 
->
-    <Feather name='x' size={20} color="#000000ff" /> 
-</TouchableOpacity>
+      {/* KUSTUTAMISE NUPP - Kasutame Pressable'it ka siin, et vältida bubblingut */}
+      <Pressable 
+        style={styles.closeButton} 
+        onPress={(e) => {
+          e.stopPropagation(); // TAKISTAB detailvaate avanemist, kui vajutad X
+          onDelete(wish.id);
+        }}
+      >
+        <Feather name='x' size={18} color="#000" /> 
+      </Pressable>
       
-      {/* -------------------- 2. INFO KONTEINER (Tõstetud "õhku") -------------------- */}
+      {/* INFO KONTEINER */}
       <View style={styles.infoContainer}>
-        
         <View style={styles.titleRow}>
-          {/* Pealkiri */}
-          <Text style={styles.title} numberOfLines={2}>{wish.title}</Text>
+          <Text style={styles.title} numberOfLines={1}>{wish.title}</Text>
           
-          {/* -------------------- 3. TEE TEHTUKS IKON-NUPP -------------------- */}
-          {/* Nupp kuvatakse ainult, kui soov ei ole veel täidetud, või kuvatakse tehtuks märk */}
-          <TouchableOpacity 
-            style={styles.completeIcon} 
-            onPress={() => onMarkComplete(wish.id)}
+          <Pressable 
+            onPress={(e) => {
+              e.stopPropagation(); // TAKISTAB detailvaate avanemist
+              onMarkComplete(wish.id);
+            }}
           >
-            <Ionicons 
-              name={completeIconName as any} 
-              size={35} 
-              color={completeIconColor} 
-            />
-          </TouchableOpacity>
-
+            <Ionicons name={completeIconName as any} size={28} color="#ff9800" />
+          </Pressable>
         </View>
         
-        {/* Lühike kirjeldus või link (valikuline) */}
         {wish.description && (
-          <Text style={styles.description} numberOfLines={3}>
+          <Text style={styles.description} numberOfLines={2}>
             {wish.description}
           </Text>
         )}
       </View>
-      
-    </View>
+    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
     width: ITEM_WIDTH, 
-    marginHorizontal: width * 0.01, 
+    marginHorizontal: width * 0.02, 
     marginVertical: 10,
     backgroundColor: '#fff',
-    borderRadius: 8,
+    borderRadius: 15, // Ümaramad nurgad teevad modernsemaks
     overflow: 'hidden', 
-    elevation: 3, 
+    elevation: 4, 
     shadowColor: '#000', 
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
-    minHeight: 300, // Piklikum kuju
-    position: 'relative', 
+    shadowRadius: 8,
+    minHeight: 250,
+    position: 'relative',
   },
   image: {
     width: '100%',
-    height: 200, // Annab pildile rohkem ruumi
+    height: 180, // Annab pildile rohkem ruumi
   },
   imagePlaceholder: {
     width: '100%',
-    height: 200,
-    backgroundColor: '#f5f5f5', 
+    height: 180,
+    backgroundColor: '#f9f9f9', 
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   
   // --- UUS: INFO KONTEINER ---
   infoContainer: {
-    position: 'absolute', // "Õhus"
-    bottom: 0,
-    width: '100%',
-    padding: 10,
-    backgroundColor: 'rgba(255, 255, 255, 0.9)', // Poolläbipaistev taust
-    borderTopLeftRadius: 8,
-    borderTopRightRadius: 8,
-    minHeight: 100,
-    justifyContent: 'center',
+    padding: 12,
+    backgroundColor: '#fff',
   },
   
   //PEALKIRJA JA NUPU RIDA ---
@@ -131,14 +131,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 5,
+    marginBottom: 4,
   },
   title: {
     flex: 1, // Võtab suurema osa ruumist
-    fontWeight: 'bold',
-    fontSize: 16,
-    marginRight: 10,
-  },
+    fontWeight: '700',
+    fontSize: 15,
+  lineHeight: 16,
+},
   description: {
     fontSize: 12,
     color: '#666',
@@ -147,17 +147,15 @@ const styles = StyleSheet.create({
   // --- KUSTUTAMISE NUPP ---
   closeButton: {
     position: 'absolute',
-    right: 10,
-    top: 10,
-    width: 25,
-    height: 25,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#000000ff',
-    backgroundColor: '#ffffff42', 
+    right: 8,
+    top: 8,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255, 255, 255, 0.7)', 
     justifyContent: 'center', 
-  alignItems: 'center',
-  zIndex: 10,
+    alignItems: 'center',
+    zIndex: 10,
   },
   deleteButtonText: {
     fontSize: 18,
