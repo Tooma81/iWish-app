@@ -13,8 +13,8 @@ const MAPPING = {
   'house.slash': 'home',
   'heart.slash': 'heart',
   'person.slash': 'user',
-  'pen.slash': 'edit-2',
-  'arrow-right.slash': 'chevron-right'
+  'pen': 'edit-2',
+  'arrow-right': 'chevron-right'
 } as IconMapping;
 
 export function IconSymbol({

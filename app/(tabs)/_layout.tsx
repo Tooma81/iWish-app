@@ -10,6 +10,8 @@ const ICON_MAPPING = {
   home: 'home',
   friends: 'heart',
   profile: 'user',
+  pen: 'edit-2',
+  arrow: 'chevron-right'
 } as const;
 
 type IconKey = keyof typeof ICON_MAPPING;

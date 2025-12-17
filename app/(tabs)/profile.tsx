@@ -132,7 +132,7 @@ export default function Profile() {
                     <Image source={{ uri: profileImage }} style={styles.profilePic} />
                   ) : (
                     <View style={styles.profilePicPlaceholder}>
-                      <IconSymbol size={70} name="person.slash" color={'#000000'} />
+                      <IconSymbol size={70} name="person" color={'#000000'} />
                     </View>
                   )}
                 </TouchableOpacity>
@@ -164,7 +164,7 @@ export default function Profile() {
                     <View style={styles.valueContainer}>
                       <Text style={styles.value}>{name}</Text>
                       <TouchableOpacity onPress={() => setIsEditingName(true)}>
-                        <IconSymbol size={28} name="pen.slash" color={'#687076'} />
+                        <IconSymbol size={28} name="pen" color={'#687076'} />
                       </TouchableOpacity>
                     </View>
                   )}
@@ -190,7 +190,7 @@ export default function Profile() {
                     <View style={styles.valueContainer}>
                       <Text style={styles.value}>{email}</Text>
                       <TouchableOpacity onPress={() => setIsEditingEmail(true)}>
-                        <IconSymbol size={28} name="pen.slash" color={'#687076'} />
+                        <IconSymbol size={28} name="pen" color={'#687076'} />
                       </TouchableOpacity>
                     </View>
                   )}
@@ -200,7 +200,7 @@ export default function Profile() {
                 <View style={styles.fieldRow}>
                   <Text style={styles.label}>Change Password</Text>
                   <TouchableOpacity onPress={handleChangePassword}>
-                      <IconSymbol size={28} name="arrow-right.slash" color={'#687076'} />
+                      <IconSymbol size={28} name="arrow-right" color={'#687076'} />
                   </TouchableOpacity>
                 </View>
               </View>
@@ -216,6 +216,7 @@ export default function Profile() {
                     onValueChange={() => toggleNotification('push')}
                     trackColor={{ false: '#767577', true: '#4CAF50' }}
                     thumbColor={notifications.push ? '#fff' : '#f4f3f4'}
+                    style={{ transform: [{ scaleX: 0.9 }, { scaleY: 1.1 }] }}
                   />
                 </View>
 
@@ -226,6 +227,7 @@ export default function Profile() {
                     onValueChange={() => toggleNotification('deadline')}
                     trackColor={{ false: '#767577', true: '#4CAF50' }}
                     thumbColor={notifications.deadline ? '#fff' : '#f4f3f4'}
+                    style={{ transform: [{ scaleX: 0.9 }, { scaleY: 1.1 }] }}
                   />
                 </View>
 
@@ -236,6 +238,7 @@ export default function Profile() {
                     onValueChange={() => toggleNotification('wishes')}
                     trackColor={{ false: '#767577', true: '#4CAF50' }}
                     thumbColor={notifications.wishes ? '#fff' : '#f4f3f4'}
+                    style={{ transform: [{ scaleX: 0.9 }, { scaleY: 1.1 }] }}
                   />
                 </View>
 
@@ -246,6 +249,7 @@ export default function Profile() {
                     onValueChange={() => toggleNotification('completed')}
                     trackColor={{ false: '#767577', true: '#4CAF50' }}
                     thumbColor={notifications.completed ? '#fff' : '#f4f3f4'}
+                    style={{ transform: [{ scaleX: 0.9 }, { scaleY: 1.1 }] }}
                   />
                 </View>
               </View>
@@ -273,6 +277,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 20,
     color: '#333',
+    marginTop: 6,
   },
   profilePicContainer: {
     position: 'relative',
@@ -326,19 +331,19 @@ const styles = StyleSheet.create({
     marginBottom: 30,
   },
   sectionTitle: {
-    fontSize: 14,
-    fontWeight: 'bold',
+    fontSize: 18,
+    fontWeight: '500',
     color: '#666',
     marginBottom: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#ddd',
+    borderBottomColor: '#F5A858',
     paddingBottom: 5,
   },
   fieldRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingVertical: 10,
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
   },
