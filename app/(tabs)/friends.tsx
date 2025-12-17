@@ -131,112 +131,73 @@ async function handleDeleteFriend(friendProfileId: string) {
   // --- PÕHI RENDERDAMINE ---
   return (
     <View style={styles.container}>
-      {/* Kui seanss on olemas, kuva sisselogitud sisu */}
-        {session && session.user ? (
-          <>
-            {/* 1. Modaal Sõbra Lisamiseks (Uus, ilus modaal) */}
-            <Modal
-              animationType="fade"
-              transparent={true}
-              visible={isAddFriendModalVisible}
-              onRequestClose={() => setIsAddFriendModalVisible(false)}
-            >
-              <View style={styles.centeredView}>
-                <AddFriend 
-                  onCloseModal={() => setIsAddFriendModalVisible(false)} 
-                  onFriendAdded={loadFriends} 
-                />
-              </View>
-            </Modal>
-            
-            {/* 2. Modaal Vana Otsinguloogikaga (Kui hoiate seda) */}
-            {/* Kui te 'vana' otsinguloogikat enam ei kasuta, kustutage ka see komponent ja seotud useState-id (isModalVisible, searchTerm, searchResults jne). Pildi järgi kasutate uut `AddFriend` modaali. */}
-            
-            {/* Ülemine navigeerimisriba ja Lisa sõber nupp */}
-            <View style={styles.header}>
-              <Text style={styles.title}>My friends</Text>
-              <TouchableOpacity onPress={() => setIsAddFriendModalVisible(true)} style={styles.addButton}>
-                <Text style={styles.addButtonText}>+ friend</Text> 
-              </TouchableOpacity>
-<View style={styles.container}>
-      
-      {/* 1. Modaal Sõbra Lisamiseks (Uus, ilus modaal) */}
-      <Modal
-        animationType="fade"
-        transparent={true}
-        visible={isAddFriendModalVisible}
-        onRequestClose={() => setIsAddFriendModalVisible(false)}
-      >
-        <View style={styles.centeredView}>
-          <AddFriend 
-            onCloseModal={() => setIsAddFriendModalVisible(false)} 
-            onFriendAdded={loadFriends} 
-          />
-        </View>
-      </Modal>
-      
-      {/* 2. Modaal Vana Otsinguloogikaga (Kui hoiate seda) */}
-      {/* Kui te 'vana' otsinguloogikat enam ei kasuta, kustutage ka see komponent ja seotud useState-id (isModalVisible, searchTerm, searchResults jne). Pildi järgi kasutate uut `AddFriend` modaali. */}
-      
-      {/* Ülemine navigeerimisriba ja Lisa sõber nupp */}
-      <View style={styles.header}>
-        <Text style={styles.title}>My friends</Text>
-        <TouchableOpacity onPress={() => setIsAddFriendModalVisible(true)} style={styles.addButton}>
-          <Feather name="user-plus" size={24} color="#F9F2ED" />
-        </TouchableOpacity>
-      </View>
-
-      {loading ? (
-        <ActivityIndicator size="large" color="#FFA500" style={styles.loader} />
-      ) : (
+      {session && session.user ? (
         <>
-          {/* Ootel Ettepanekud (näiteks teine sektsioon) */}
-          {pendingRequests.length > 0 && (
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Ootel (Vastuvõtmiseks)</Text>
-              <FlatList
-                data={pendingRequests}
-                keyExtractor={(item) => item.id.toString()}
-                renderItem={renderFriendItem}
+          {/* Add Friend Modal */}
+          <Modal
+            animationType="fade"
+            transparent
+            visible={isAddFriendModalVisible}
+            onRequestClose={() => setIsAddFriendModalVisible(false)}
+          >
+            <View style={styles.centeredView}>
+              <AddFriend
+                onCloseModal={() => setIsAddFriendModalVisible(false)}
+                onFriendAdded={loadFriends}
               />
             </View>
+          </Modal>
 
-            {loading ? (
-              <ActivityIndicator size="large" color="#FFA500" style={styles.loader} />
-            ) : (
-              <>
-                {/* Ootel Ettepanekud (näiteks teine sektsioon) */}
-                {pendingRequests.length > 0 && (
-                  <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Ootel (Vastuvõtmiseks)</Text>
-                    <FlatList
-                      data={pendingRequests}
-                      keyExtractor={(item) => item.id.toString()}
-                      renderItem={renderFriendItem}
-                    />
-                  </View>
-                )}
+          {/* Header */}
+          <View style={styles.header}>
+            <Text style={styles.title}>My friends</Text>
+            <TouchableOpacity
+              onPress={() => setIsAddFriendModalVisible(true)}
+              style={styles.addButton}
+            >
+              <Feather name="user-plus" size={24} color="#F9F2ED" />
+            </TouchableOpacity>
+          </View>
 
-                {/* Kinnitatud sõbrad */}
-                <Text style={styles.sectionTitle}>Verified friends</Text>
-                {acceptedFriends.length === 0 ? (
-                  <Text style={styles.emptyText}>Sõpru pole veel lisatud.</Text>
-                ) : (
+          {/* Loading */}
+          {loading && (
+            <ActivityIndicator size="large" color="#FFA500" style={styles.loader} />
+          )}
+
+          {!loading && (
+            <>
+              {/* Pending Requests */}
+              {pendingRequests.length > 0 && (
+                <View style={styles.section}>
+                  <Text style={styles.sectionTitle}>Ootel (Vastuvõtmiseks)</Text>
                   <FlatList
-                    data={acceptedFriends}
+                    data={pendingRequests}
                     keyExtractor={(item) => item.id.toString()}
                     renderItem={renderFriendItem}
                   />
-                )}
-              </>
-            )}
-          </>
-        ) : (
-          <Redirect href="/" />
-        )}
+                </View>
+              )}
+
+              {/* Accepted Friends */}
+              <Text style={styles.sectionTitle}>Verified friends</Text>
+
+              {acceptedFriends.length === 0 ? (
+                <Text style={styles.emptyText}>Sõpru pole veel lisatud.</Text>
+              ) : (
+                <FlatList
+                  data={acceptedFriends}
+                  keyExtractor={(item) => item.id.toString()}
+                  renderItem={renderFriendItem}
+                />
+              )}
+            </>
+          )}
+        </>
+      ) : (
+        <Redirect href="/" />
+      )}
     </View>
-  );
-}
+)}
 
 //STIILID:
 const styles = StyleSheet.create({
