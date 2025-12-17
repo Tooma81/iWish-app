@@ -96,7 +96,7 @@ export default function Profile() {
       // 1. Laadi üles kasutades ArrayBufferit (lahendab 400 Bad Request vea veebis)
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('user_images')
-        .upload(fileName, decode(asset.base64), {
+        .upload(fileName, decode(asset.base64!), {
           contentType: `image/${fileExt}`,
           upsert: true
         });

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, ActivityIndicator, Alert, Modal, Button } from 'react-native';
+import { Image, View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, ActivityIndicator, Alert, Modal, Button } from 'react-native';
 import {
   fetchFriendsList,
   removeFriend,
@@ -98,35 +98,41 @@ async function handleDeleteFriend(friendProfileId: string) {
   // --- Komponent ühe sõbra kuvamiseks nimekirjas ---
   const renderFriendItem = ({ item }: { item: Friend }) => (
     <View style={styles.friendItem}>
-      {/* Avatar/Pilt puudub praegu - kasutame Teksti */}
-      <Text style={styles.friendName}>{item.username}</Text>
-      <Text style={styles.friendRelationship}>{item.relationship}</Text>
-      
-      {/* Eemaldamise nupp (ainult Accepted sõpradel) */}
+      <View style={styles.friendInfo}>
+      {/* Profiilipilt */}
+      {item.avatar_url ? (
+        <Image source={{ uri: item.avatar_url }} style={styles.avatar} />
+      ) : (
+        <View style={[styles.avatar, styles.avatarPlaceholder]}>
+          <Feather name="user" size={20} color="#666" />
+        </View>
+      )}
 
-<TouchableOpacity 
-    // Kasutame stiile, mille me defineerisime allpool
-    style={styles.closeButton} 
-    onPress={() => handleDeleteFriend(item.profile_id)} //kustutamise funktsioon ja otsekäivitus
-    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} 
->
-    <Feather name='x' size={20} color="#000000ff" /> 
-</TouchableOpacity>
-
-      
-      {/* Kinnitamise nupp (kui keegi teine on saatnud mulle ettepaneku) */}
+      {/* Nimi ja suhe */}
+      <View style={styles.textContainer}>
+        <Text style={styles.friendName}>{item.username}</Text>
+        <Text style={styles.friendRelationship}>{item.relationship}</Text>
+      </View>
+    </View>
+    
+    {/* Tegevusnupud (Kustuta/Võta vastu) */}
+    <View style={styles.actionButtons}>
       {item.status === 'pending' && (
         <TouchableOpacity onPress={() => handleAcceptRequest(item.id)} style={styles.acceptButton}>
           <Text style={styles.acceptButtonText}>Võta vastu</Text>
         </TouchableOpacity>
       )}
-      
-      {/* Kui 'pending' ja olen ise saatja, näitan staatust */}
-      {item.status === 'pending' && item.profile_id !== friends.find(f => f.status === 'accepted')?.profile_id && (
-        <Text style={styles.pendingText}>Ootel...</Text>
-      )}
+
+      <TouchableOpacity 
+          style={styles.closeButton} 
+          onPress={() => handleDeleteFriend(item.profile_id)}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} 
+      >
+          <Feather name='x' size={18} color="#000" /> 
+      </TouchableOpacity>
     </View>
-  );
+  </View>
+);
 
   // --- PÕHI RENDERDAMINE ---
   return (
@@ -228,6 +234,17 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: 'bold',
   },
+  avatar: {
+  width: 50,
+  height: 50,
+  borderRadius: 25, // Teeb pildi ümmarguseks
+  marginRight: 15,
+},
+avatarPlaceholder: {
+  backgroundColor: '#eee',
+  justifyContent: 'center',
+  alignItems: 'center',
+},
   loader: {
     marginTop: 50,
   },
@@ -248,21 +265,32 @@ const styles = StyleSheet.create({
     color: '#666',
     marginTop: 20,
   },
+  friendInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
   friendItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 15,
+    paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: '#f0f0f0',
     justifyContent: 'space-between',
   },
   friendName: {
-    fontSize: 16,
-    flex: 1,
+    fontSize: 18,
+    fontWeight: '500',
+    color: '#333',
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   friendRelationship: {
+    fontSize: 14,
     color: '#888',
-    marginRight: 40,
+    marginTop: 2,
   },
   removeButton: {
     padding: 8,
@@ -273,20 +301,19 @@ const styles = StyleSheet.create({
     color: 'red',
     fontWeight: 'bold',
   },
+  textContainer: {
+  justifyContent: 'center',
+},
   closeButton: {
-    position: 'absolute',
-    right: 10,
-    top: 10,
-    width: 25,
-    height: 25,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#000000ff',
-    backgroundColor: '#ffffff42', 
-    justifyContent: 'center', 
+width: 28,
+  height: 28,
+  borderRadius: 14,
+  borderWidth: 1,
+  borderColor: '#ddd',
+  justifyContent: 'center', 
   alignItems: 'center',
-  zIndex: 10,
-  },
+  marginLeft: 10,
+},
   acceptButton: {
     padding: 8,
     backgroundColor: '#dff',
