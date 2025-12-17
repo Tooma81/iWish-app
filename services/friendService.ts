@@ -83,7 +83,7 @@ const senderId = userData.user.id;
   // Küsime friends tabelist kirjed, kus oleme kas user_id või friend_id
   const { data: relations, error } = await supabase
     .from('friends')
-    .select(`id, status, user_id, friend_id, profiles_user_id:user_id(id,username,avatar_url), profiles_friend_id:friend_id(id,username,avatar_url)`)
+    .select(`id, status, user_id, friend_id, profiles_user_id:user_id(id, username, avatar_url, full_name), profiles_friend_id:friend_id(id, username, avatar_url, full_name)`)
     .or(`user_id.eq.${senderId},friend_id.eq.${senderId}`);
 
   if (error) {
@@ -111,7 +111,7 @@ const senderId = userData.user.id;
     return {
       id: rel.id,
       profile_id: friendProfileData.id,
-      username: friendProfileData.username,
+      username: friendProfileData.full_name || friendProfileData.username, // kui pole nime, kasuta kasutajanime st emaili
       avatar_url: friendProfileData.avatar_url,
       relationship: relationshipLabel,
       status: rel.status,

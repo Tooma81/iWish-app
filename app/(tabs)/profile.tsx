@@ -16,6 +16,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { supabase } from '@/utils/supabase'; 
 import { Session } from '@supabase/supabase-js'; 
 import { Redirect, useRouter } from 'expo-router';
+import { decode } from 'base64-arraybuffer';
 export default function Profile() {
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [name, setName] = useState('Maret Vaabel');
@@ -33,50 +34,117 @@ export default function Profile() {
 
   useEffect(() => {
       // 1. Kontrolli seansi olekut käivitamisel
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        setSession(session);
-      });
-  
-      // 2. Seadista reaalajas kuulaja olekumuutustele
-      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-        setSession(session);
-      });
-      
-      // Puhasta kuulaja komponendi eemaldamisel
-      return () => subscription.unsubscribe();
-    }, []);
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
+
+    // 2. Seadista reaalajas kuulaja olekumuutustele
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+    
+    // Puhasta kuulaja komponendi eemaldamisel
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // 3. Uus useEffect andmete laadimiseks, kui session muutub
+  useEffect(() => {
+    const fetchProfile = async () => {
+      // Kontrollime, et session ja user on olemas, et vältida 'null' viga
+      if (session?.user) {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('full_name, avatar_url, username')
+          .eq('id', session.user.id)
+          .single();
+
+        if (data) {
+          setName(data.full_name || '');
+          setProfileImage(data.avatar_url);
+          setEmail(data.username || session.user.email || '');
+        }
+      }
+    };
+
+    fetchProfile();
+  }, [session]);
   
 
   // Vali pilt seadmest
   const pickImage = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('Lubatud pole', 'Palun luba pildide juurdepääs!');
-      return;
-    }
+   const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+  if (status !== 'granted') {
+    Alert.alert('Viga', 'Vajame piltidele ligipääsu!');
+    return;
+  }
 
-    let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 1,
-    });
+  let result = await ImagePicker.launchImageLibraryAsync({
+    mediaTypes: ImagePicker.MediaTypeOptions.Images,
+    allowsEditing: true,
+    aspect: [1, 1],
+    quality: 0.5,
+    base64: true, // See on veebis testimiseks kriitiline!
+  });
 
-    if (!result.canceled) {
-      setProfileImage(result.assets[0].uri);
+  if (!result.canceled && session?.user && result.assets[0].base64) {
+    try {
+      const asset = result.assets[0];
+      const fileExt = asset.uri.split('.').pop()?.toLowerCase();
+      // Failinimi juurkausta (vastavalt su uuele poliitikale)
+      const fileName = `${session.user.id}-${Math.random()}.${fileExt}`;
+
+      // 1. Laadi üles kasutades ArrayBufferit (lahendab 400 Bad Request vea veebis)
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('user_images')
+        .upload(fileName, decode(asset.base64), {
+          contentType: `image/${fileExt}`,
+          upsert: true
+        });
+
+      if (uploadError) throw uploadError;
+
+      // 2. Hankige avalik URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('user_images')
+        .getPublicUrl(fileName);
+
+      // 3. Salvesta link andmebaasi 'profiles' tabelisse
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ avatar_url: publicUrl })
+        .eq('id', session.user.id);
+
+      if (updateError) throw updateError;
+
+      setProfileImage(publicUrl);
+      Alert.alert('Edu!', 'Profiilipilt on uuendatud.');
+    } catch (error: any) {
+      console.error("Viga:", error);
+      Alert.alert('Viga üleslaadimisel', error.message);
     }
-  };
+  }
+};
 
   // Salvesta muudatused
-  const saveField = (field: string, value: string) => {
+  const saveField = async (field: string, value: string) => {
+if (!session?.user) return;
+
+  try {
     if (field === 'name') {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ full_name: value }) // See uuendab andmebaasi!
+        .eq('id', session.user.id);
+
+      if (error) throw error;
       setName(value);
       setIsEditingName(false);
-    } else if (field === 'email') {
-      setEmail(value);
-      setIsEditingEmail(false);
-    }
-  };
+    } 
+    // Email on tavaliselt auth.users tabelis, seega seda profiles kaudu ei muudeta lihtsalt.
+  } catch (error: any) {
+    Alert.alert('Viga', error.message);
+  }
+};
 
   // Muuda parooli
   const handleChangePassword = () => {
