@@ -9,11 +9,10 @@ import {
   TextInput,
   Switch,
   Alert,
-  Platform,
   ScrollView,
 } from 'react-native';
-import { Fonts } from '@/constants/theme';
 import * as ImagePicker from 'expo-image-picker';
+
 export default function Profile() {
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [name, setName] = useState('Maret Vaabel');
@@ -82,150 +81,152 @@ export default function Profile() {
   };
 
   return (
-    <ScrollView>
-    <View style={styles.container}>
-      {/* Pealkiri */}
-      <Text style={styles.header}>My Profile</Text>
+    <ScrollView contentContainerStyle={styles.scrollContainer}>
+      <View style={styles.container}>
+        {/* Pealkiri */}
+        <Text style={styles.header}>My Profile</Text>
 
-      {/* Profiilipilt */}
-      <View style={styles.profilePicContainer}>
-        <TouchableOpacity onPress={pickImage} style={styles.imageWrapper}>
-          {profileImage ? (
-            <Image source={{ uri: profileImage }} style={styles.profilePic} />
-          ) : (
-            <View style={styles.profilePicPlaceholder}>
+        {/* Profiilipilt */}
+        <View style={styles.profilePicContainer}>
+          <TouchableOpacity onPress={pickImage} style={styles.imageWrapper}>
+            {profileImage ? (
+              <Image source={{ uri: profileImage }} style={styles.profilePic} />
+            ) : (
+              <View style={styles.profilePicPlaceholder}>
                 <IconSymbol size={70} name="person.slash" color={'#000000'} />
-            </View>
-          )}
-        </TouchableOpacity>
-        <TouchableOpacity onPress={pickImage} style={styles.addIcon}>
-          <Text style={styles.addIconText}>+</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Account Settings */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Account Settings</Text>
-
-        {/* Name */}
-        <View style={styles.fieldRow}>
-          <Text style={styles.label}><b>Name</b></Text>
-          {isEditingName ? (
-            <View style={styles.inputContainer}>
-              <TextInput
-                style={styles.input}
-                value={name}
-                onChangeText={setName}
-                onBlur={() => saveField('name', name)}
-                autoFocus
-                placeholder="Enter your name"
-                placeholderTextColor="#999"
-              />
-            </View>
-          ) : (
-            <View style={styles.valueContainer}>
-              <Text style={styles.value}>{name}</Text>
-              <TouchableOpacity onPress={() => setIsEditingName(true)}>
-                <IconSymbol size={28} name="pen.slash" color={'#687076'} />
-              </TouchableOpacity>
-            </View>
-          )}
-        </View>
-
-        {/* Email */}
-        <View style={styles.fieldRow}>
-          <Text style={styles.label}><b>E-mail</b></Text>
-          {isEditingEmail ? (
-            <View style={styles.inputContainer}>
-              <TextInput
-                style={styles.input}
-                value={email}
-                onChangeText={setEmail}
-                onBlur={() => saveField('email', email)}
-                keyboardType="email-address"
-                autoFocus
-                placeholder="Enter your email"
-                placeholderTextColor="#999"
-              />
-            </View>
-          ) : (
-            <View style={styles.valueContainer}>
-              <Text style={styles.value}>{email}</Text>
-              <TouchableOpacity onPress={() => setIsEditingEmail(true)}>
-                <IconSymbol size={28} name="pen.slash" color={'#687076'} />
-              </TouchableOpacity>
-            </View>
-          )}
-        </View>
-
-        {/* Change Password */}
-        <View style={styles.fieldRow}>
-          <Text style={styles.label}>Change Password</Text>
-          <TouchableOpacity onPress={handleChangePassword}>
-                <IconSymbol size={28} name="arrow-right.slash" color={'#687076'} />
+              </View>
+            )}
+          </TouchableOpacity>
+          <TouchableOpacity onPress={pickImage} style={styles.addIcon}>
+            <Text style={styles.addIconText}>+</Text>
           </TouchableOpacity>
         </View>
+
+        {/* Account Settings */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Account Settings</Text>
+
+          {/* Name */}
+          <View style={styles.fieldRow}>
+            <Text style={styles.label}>Name</Text>
+            {isEditingName ? (
+              <View style={styles.inputContainer}>
+                <TextInput
+                  style={styles.input}
+                  value={name}
+                  onChangeText={setName}
+                  onBlur={() => saveField('name', name)}
+                  autoFocus
+                  placeholder="Enter your name"
+                  placeholderTextColor="#999"
+                />
+              </View>
+            ) : (
+              <View style={styles.valueContainer}>
+                <Text style={styles.value}>{name}</Text>
+                <TouchableOpacity onPress={() => setIsEditingName(true)}>
+                  <IconSymbol size={28} name="pen.slash" color={'#687076'} />
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+
+          {/* Email */}
+          <View style={styles.fieldRow}>
+            <Text style={styles.label}>E-mail</Text>
+            {isEditingEmail ? (
+              <View style={styles.inputContainer}>
+                <TextInput
+                  style={styles.input}
+                  value={email}
+                  onChangeText={setEmail}
+                  onBlur={() => saveField('email', email)}
+                  keyboardType="email-address"
+                  autoFocus
+                  placeholder="Enter your email"
+                  placeholderTextColor="#999"
+                />
+              </View>
+            ) : (
+              <View style={styles.valueContainer}>
+                <Text style={styles.value}>{email}</Text>
+                <TouchableOpacity onPress={() => setIsEditingEmail(true)}>
+                  <IconSymbol size={28} name="pen.slash" color={'#687076'} />
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+
+          {/* Change Password */}
+          <View style={styles.fieldRow}>
+            <Text style={styles.label}>Change Password</Text>
+            <TouchableOpacity onPress={handleChangePassword}>
+                <IconSymbol size={28} name="arrow-right.slash" color={'#687076'} />
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Notifications */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Notifications</Text>
+
+          <View style={styles.notificationRow}>
+            <Text style={styles.notificationLabel}>Push-up notifications</Text>
+            <Switch
+              value={notifications.push}
+              onValueChange={() => toggleNotification('push')}
+              trackColor={{ false: '#767577', true: '#4CAF50' }}
+              thumbColor={notifications.push ? '#fff' : '#f4f3f4'}
+            />
+          </View>
+
+          <View style={styles.notificationRow}>
+            <Text style={styles.notificationLabel}>Deadline reminders</Text>
+            <Switch
+              value={notifications.deadline}
+              onValueChange={() => toggleNotification('deadline')}
+              trackColor={{ false: '#767577', true: '#4CAF50' }}
+              thumbColor={notifications.deadline ? '#fff' : '#f4f3f4'}
+            />
+          </View>
+
+          <View style={styles.notificationRow}>
+            <Text style={styles.notificationLabel}>Wishes added by your friend</Text>
+            <Switch
+              value={notifications.wishes}
+              onValueChange={() => toggleNotification('wishes')}
+              trackColor={{ false: '#767577', true: '#4CAF50' }}
+              thumbColor={notifications.wishes ? '#fff' : '#f4f3f4'}
+            />
+          </View>
+
+          <View style={styles.notificationRow}>
+            <Text style={styles.notificationLabel}>About completed wishes</Text>
+            <Switch
+              value={notifications.completed}
+              onValueChange={() => toggleNotification('completed')}
+              trackColor={{ false: '#767577', true: '#4CAF50' }}
+              thumbColor={notifications.completed ? '#fff' : '#f4f3f4'}
+            />
+          </View>
+        </View>
       </View>
-
-      {/* Notifications */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Notifications</Text>
-
-        <View style={styles.notificationRow}>
-          <Text style={styles.notificationLabel}>Push-up notifications</Text>
-          <Switch
-            value={notifications.push}
-            onValueChange={() => toggleNotification('push')}
-            trackColor={{ false: '#767577', true: '#4CAF50' }}
-            thumbColor={notifications.push ? '#fff' : '#f4f3f4'}
-          />
-        </View>
-
-        <View style={styles.notificationRow}>
-          <Text style={styles.notificationLabel}>Deadline reminders</Text>
-          <Switch
-            value={notifications.deadline}
-            onValueChange={() => toggleNotification('deadline')}
-            trackColor={{ false: '#767577', true: '#4CAF50' }}
-            thumbColor={notifications.deadline ? '#fff' : '#f4f3f4'}
-          />
-        </View>
-
-        <View style={styles.notificationRow}>
-          <Text style={styles.notificationLabel}>Wishes added by your friend</Text>
-          <Switch
-            value={notifications.wishes}
-            onValueChange={() => toggleNotification('wishes')}
-            trackColor={{ false: '#767577', true: '#4CAF50' }}
-            thumbColor={notifications.wishes ? '#fff' : '#f4f3f4'}
-          />
-        </View>
-
-        <View style={styles.notificationRow}>
-          <Text style={styles.notificationLabel}>About completed wishes</Text>
-          <Switch
-            value={notifications.completed}
-            onValueChange={() => toggleNotification('completed')}
-            trackColor={{ false: '#767577', true: '#4CAF50' }}
-            thumbColor={notifications.completed ? '#fff' : '#f4f3f4'}
-          />
-        </View>
-      </View>
-    </View>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
+  scrollContainer: {
     backgroundColor: '#fff',
-    paddingTop: 40,
+    flexGrow: 1,
+  },
+  container: {
+    paddingTop: 60,
     paddingHorizontal: 20,
-    paddingBottom: 120,
+    paddingBottom: 40,
   },
   header: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 20,
     color: '#333',
@@ -256,10 +257,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#e0e0e0',
   },
-  placeholderText: {
-    fontSize: 40,
-    color: '#888',
-  },
   addIcon: {
     position: 'absolute',
     bottom: -5,
@@ -271,8 +268,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 1,
-    elevation: 3, // Androidile varjund
-    shadowColor: '#000', // iOSile varjund
+    elevation: 3,
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 3,
@@ -340,9 +337,4 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#333',
   },
-  signOutButtonContainer: {
-    marginTop: 20,
-    width: '100%',
-    maxWidth: 200, // Piirame nupu laiust
-  }
 });
