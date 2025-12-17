@@ -72,6 +72,7 @@ export default function AddFriendForm({
           onPress={handleAddFriend}
           disabled={isDisabled}
           title={loading ? "Otsin..." : "Add friend"}
+          style={{ width: 250, height: 50, borderRadius: 25, marginTop: 5 }}
         />
       </View>
       </TouchableWithoutFeedback>
@@ -87,20 +88,20 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     backgroundColor: '#FFF',
     paddingHorizontal: 20,
-    paddingVertical: 20,
+    paddingVertical: 10,
     justifyContent: 'center',
   },
   label: {
     color: '#F5A858',
     fontFamily: 'Sora',
-    fontSize: 18,
+    fontSize: 16,
     fontStyle: 'normal',
     fontWeight: '600',
     lineHeight: 22,
-    marginBottom: 4,
+    marginBottom: 5,
   },
   verticallySpaced: {
-    marginBottom: 15, // Lisa veidi rohkem vahet, et sarnaneda pildile
+    marginBottom: 25, // Lisa veidi rohkem vahet, et sarnaneda pildile
     alignSelf: 'center',
   },
   input: {

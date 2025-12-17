@@ -141,7 +141,7 @@ async function handleDeleteFriend(friendProfileId: string) {
       <View style={styles.header}>
         <Text style={styles.title}>My friends</Text>
         <TouchableOpacity onPress={() => setIsAddFriendModalVisible(true)} style={styles.addButton}>
-          <Text style={styles.addButtonText}>+ friend</Text> 
+          <Feather name="user-plus" size={24} color="#F9F2ED" />
         </TouchableOpacity>
       </View>
 
@@ -196,9 +196,12 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   addButton: {
-    backgroundColor: '#FFA500', // Sarnane teie disaini nupule
-    padding: 10,
-    borderRadius: 5,
+    backgroundColor: '#F5A858', // Sarnane teie disaini nupule
+    width: 42,
+    height: 42,
+    borderRadius: 26,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   addButtonText: {
     color: '#fff',
