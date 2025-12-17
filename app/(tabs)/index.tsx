@@ -128,7 +128,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     justifyContent: 'center', 
     alignItems: 'stretch',
-    padding: 20,
   },
   loggedInContainer: {
     flex: 1,
