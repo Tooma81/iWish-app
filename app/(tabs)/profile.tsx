@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { supabase } from '@/utils/supabase'; 
 
 export default function Profile() {
   const [profileImage, setProfileImage] = useState<string | null>(null);
@@ -73,6 +74,11 @@ export default function Profile() {
     );
   };
 
+  // Logi valja
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+  };
+
   // Lülita teavitused
   const toggleNotification = (key: keyof typeof notifications) => {
     setNotifications(prev => ({
@@ -91,7 +97,7 @@ export default function Profile() {
         <View style={styles.signOutContainer}>
           <TouchableOpacity 
             style={styles.signOutButton} 
-            onPress={() => Alert.alert('Signed out')}
+            onPress={handleLogout}
           >
             <Ionicons name="exit-outline" size={24} color="#fff"/>
             <Text style={styles.signOutText}>Sign Out</Text>
