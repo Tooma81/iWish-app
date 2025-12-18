@@ -39,12 +39,10 @@ const screenWidth = Dimensions.get('window').width;
 
 export default function App() {
   const [modalVisible, setModalVisible] = useState(false);
-
   const [session, setSession] = useState<Session | null>(null);
   const navigation = useNavigation(); 
-  
-  // Kodu navigatsioon 
   const [cameTrue, setCameTrue] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     // 1. Kontrolli seansi olekut käivitamisel
@@ -62,21 +60,19 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    navigation.setOptions({
-      headerShown: !!session,   // show header only when logged in
-      tabBarStyle: session
-        ? customTabBarStyle                            // logged in → default tab bar
-        : { display: "none" },          // logged out → hide tab bar
-    });
-  }, [session]);
+    const channel = supabase
+      .channel('schema-db-changes')
+      .on('postgres_changes', 
+        { event: 'INSERT', schema: 'public', table: 'wishes'}, () => {
+          setRefreshKey(prev => prev + 1); // See värskendab nimekirja automaatselt!
+        }
+      )
+      .subscribe();
 
-  // Väljalogimise funktsioon
-  async function signOut() {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-        Alert.alert("Väljalogimise viga", error.message);
-    }
-  }
+    return () => { supabase.removeChannel(channel); };
+  }, []);
+
+  <Wishlist key={refreshKey} cameTrue={cameTrue}/>
 
   return (
     <View style={styles.container}>
@@ -104,13 +100,9 @@ export default function App() {
               style={styles.homeNavButton}
             />
           </View>
-          <Wishlist cameTrue={cameTrue}/>
-          <AppModal
-            visible={modalVisible}
-            onClose={() => setModalVisible(false)}
-            title="Add a wish"
-          >
-            {/* ANNAME SULGEMISFUNKTSIOONI AddWish komponendile */}
+          <Wishlist key={refreshKey} cameTrue={cameTrue}/>
+          
+          <AppModal visible={modalVisible} onClose={() => setModalVisible(false)} title="Add a wish">
             <AddWish onCloseModal={() => setModalVisible(false)} />
             </AppModal>
         </>
