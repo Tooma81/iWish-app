@@ -3,30 +3,37 @@ import { View, StyleSheet, Alert, Dimensions } from 'react-native';
 import { supabase } from '@/utils/supabase'; 
 import Auth from '@/components/Auth'; 
 import { Session } from '@supabase/supabase-js'; 
-import { useFocusEffect, useNavigation } from 'expo-router'; // Impordime useFocusEffect
+import { useFocusEffect, useNavigation } from 'expo-router'; 
 import { ThemedButton } from '@/components/themed-button';
 import Wishlist from '@/components/Wishlist';
 import AppModal from '@/components/app-modal';
 import AddWish from '@/components/AddWish';
+
+// 1. LAHENDUS: Impordime puuduva stiili (Screenshot 04.53.57 veaparandus)
+import { customTabBarStyle } from "@/constants/tab-bar";
 
 const screenWidth = Dimensions.get('window').width;
 
 export default function App() {
   const [modalVisible, setModalVisible] = useState(false);
   const [session, setSession] = useState<Session | null>(null);
-  const navigation = useNavigation();
   const [cameTrue, setCameTrue] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
+  // 2. LAHENDUS: Deklareerime navigation ainult ÜKS kord siin (Screenshot 04.40.35 veaparandus)
+  const navigation = useNavigation();
+
+  // Saki-riba ja päise juhtimine vastavalt sessioonile
   useEffect(() => {
     navigation.setOptions({
-      headerShown: false, // Peidab "Home" päise
+      headerShown: false, // Peidab "Home" päise tervitusekraanilt
       tabBarStyle: session
-        ? customTabBarStyle // Kui on sisselogitud, näita disainitud riba
-        : { display: "none" }, // KUI POLE SESSIOONI, PEIDA RIBA
+        ? customTabBarStyle // Sisselogituna näita disainitud riba
+        : { display: "none" }, // Sisselogimata olekus peida riba täielikult
     });
   }, [session, navigation]);
 
+  // Autentimise kontroll
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
@@ -39,15 +46,14 @@ export default function App() {
     return () => subscription.unsubscribe();
   }, []);
 
-  // 2. See on VÕTI: Värskendab nimekirja, kui kasutaja naaseb sellele lehele
+  // Värskendab nimekirja fookusesse sattumisel
   useFocusEffect(
     useCallback(() => {
-      // Suurendame refreshKey-d, mis sunnib <Wishlist /> komponenti uuesti pärima andmeid
       setRefreshKey(prev => prev + 1);
     }, [])
   );
 
-  // 3. Reaalajas kuulaja (kui keegi lisab soovi väljaspool detailvaadet)
+  // Reaalajas kuulaja andmebaasi muudatustele
   useEffect(() => {
     const channel = supabase
       .channel('schema-db-changes')
@@ -87,16 +93,17 @@ export default function App() {
             />
           </View>
           
-          {/* refreshKey muutumine sunnib Wishlisti andmeid uuendama */}
           <Wishlist key={refreshKey} cameTrue={cameTrue}/>
+          
           <AppModal visible={modalVisible} onClose={() => setModalVisible(false)} title="Add a wish">
             <AddWish 
-            onCloseModal={() => setModalVisible(false)}
-            onWishAdded={() => setRefreshKey(prev => prev + 1)}
-              />
+              onCloseModal={() => setModalVisible(false)}
+              onWishAdded={() => setRefreshKey(prev => prev + 1)}
+            />
           </AppModal>
         </>
       ) : (
+        /* Siin kuvatakse sisselogimise vaade ilma alumise menüüta */
         <Auth onReadyForPasswordUpdate={() => {}} />
       )}
     </View>
@@ -107,7 +114,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
-    // Eemaldasin justifyContent: 'center', et nimekiri algaks ülevalt
     alignItems: 'stretch',
   },
   homeNavContainer: {
