@@ -73,7 +73,7 @@ const styles = StyleSheet.create({
 
   // --- WELCOME/SPLASH EKRAANI STIILID ---
   welcomeTitle: {
-    fontSize: 32,
+    fontSize: 30,
     fontWeight: '600',
     color: '#ffffff',
     fontFamily: 'Sora',
@@ -96,7 +96,6 @@ const styles = StyleSheet.create({
   bigOrangeButton: {
   width: 270,
   paddingVertical: 16,
-  paddingHorizontal: 20,
   justifyContent: 'center',
   alignItems: 'center',
   borderRadius: 20,
