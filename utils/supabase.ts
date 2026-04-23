@@ -4,8 +4,8 @@ import { createClient } from '@supabase/supabase-js'
 
 // ASENDA NENDE VÄÄRTUSED OMA PROJEKTI OMAdeGA!
 // VÕTMED LEIAD: Supabase Dashboard -> Settings -> API
-const supabaseUrl = 'https://xmuctbmgastvyclkmarb.supabase.co' 
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhtdWN0Ym1nYXN0dnljbGttYXJiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMxODQ4NzQsImV4cCI6MjA3ODc2MDg3NH0.O0Hz0Dbr4UOHBLGCgoDuySwHzWKi_dJKu7v3CABA5Qw'
+const supabaseUrl = 'https://linpvzdzjnqojqzajnok.supabase.co' 
+const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxpbnB2emR6am5xb2pxemFqbm9rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY4MzkzNjEsImV4cCI6MjA5MjQxNTM2MX0.jLMBO7G3HyRPnhcB7KdHWOTUE9aVCm8CJt47v_cRLYU'
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
